@@ -26,6 +26,13 @@ class ValidationStatus(str, Enum):
     INVALID = "Invalid"
 
 
+class CameraStatus(str, Enum):
+    CONNECTED = "Connected"
+    RECONNECTING = "Reconnecting"
+    FALLBACK_MODE = "Fallback_Mode"
+    OFFLINE = "Offline"
+
+
 # ==============================================================================
 # CAMERA & ROI SCHEMAS
 # ==============================================================================
@@ -115,10 +122,25 @@ class CameraConfigUpdate(BaseModel):
 
 class CameraConfigResponse(CameraConfigBase):
     id: UUID
+    status: Optional[CameraStatus] = CameraStatus.OFFLINE
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
     model_config = {"from_attributes": True}
+
+
+class CameraStreamInfo(BaseModel):
+    """Real-time operational status and frame metadata of a camera worker."""
+    camera_code: CameraCode
+    camera_name: str
+    status: CameraStatus
+    is_fallback: bool
+    resolution_width: int
+    resolution_height: int
+    fps: float
+    frames_extracted: int
+    last_frame_time: Optional[str] = None
+    source: Optional[str] = None
 
 
 # ==============================================================================
@@ -153,6 +175,7 @@ class ViolationEventBase(BaseModel):
     model_used: str = Field(..., description="Active YOLO model at capture time ('YOLOv26n' or 'YOLOv8')")
     inference_ms: Optional[float] = Field(None, description="Inference latency in milliseconds")
     evidence_path: Optional[str] = Field(None, description="Storage object path in Supabase Storage")
+    session_type: Optional[str] = Field(None, description="Rush hour category ('Rush Hour Pagi', 'Off-Peak Siang', 'Rush Hour Sore', 'Akhir Pekan')")
     validation_status: ValidationStatus = Field(
         default=ValidationStatus.PENDING,
         description="Human-in-the-loop review status ('Pending', 'Valid', 'Invalid')",
@@ -171,12 +194,18 @@ class ViolationEventValidateRequest(BaseModel):
         description="Validated review decision ('Valid' to confirm or 'Invalid' to reject)",
     )
     validated_by: Optional[UUID] = Field(None, description="Supabase Auth UUID of the operator")
+    plate_number: Optional[str] = Field(None, description="Manual license plate number verified/corrected by operator")
+    reason: Optional[str] = Field(None, description="Reason or violation category")
+    notes: Optional[str] = Field(None, description="Operator notes during review")
 
 
 class ViolationEventResponse(ViolationEventBase):
     id: UUID
     camera_code: Optional[str] = None
     camera_name: Optional[str] = None
+    plate_number: Optional[str] = Field(None, description="Manual verified license plate")
+    reason: Optional[str] = Field(None, description="Violation reason category")
+    notes: Optional[str] = Field(None, description="Operator notes")
     evidence_image_url: Optional[str] = Field(None, description="Publicly accessible URL to evidence image")
     validated_by: Optional[UUID] = None
     validated_at: Optional[datetime] = None
@@ -198,7 +227,57 @@ class AlertBroadcastPayload(BaseModel):
     vehicle_track_id: str
     detected_at: str
     duration_seconds: int
+    threshold_seconds: Optional[int] = 60
     model_used: str
+    inference_ms: Optional[float] = None
+    session_type: Optional[str] = None
     evidence_url: Optional[str] = None
     validation_status: str = "Pending"
 
+
+
+# ==============================================================================
+# ONBOARDING SETUP SCHEMAS
+# ==============================================================================
+
+class OnboardingStep1Payload(BaseModel):
+    location_name: str = Field(..., description="Nama konfigurasi lokasi (misal: Pos Pemantauan Empang - Titik A)")
+    sector: str = Field(..., description="Sektor Pengawasan Dishub (misal: Bogor Selatan (Empang, Batutulis, Cipaku))")
+    operator_name: str = Field(..., description="Nama Penanggung Jawab / Operator")
+    operator_nip: str = Field(..., description="NIP Operator")
+    shift: str = Field(default="Shift Pagi (06.00–14.00)")
+    trayek_references: List[str] = Field(
+        default_factory=lambda: [
+            "02 Sukasari - Bubulak",
+            "03 Baranangsiang - Bubulak",
+            "14 Pasir Kuda - Sukasari",
+        ],
+        description="Master Data Trayek Jalur Ini (Referensi acuan manual rute umum, bukan klasifikasi AI)",
+    )
+    camera_code: Optional[str] = Field("empang", description="Kode kamera sasaran")
+    is_draft: bool = Field(False, description="Tandai draf jika belum final")
+
+
+class OnboardingStep1Response(OnboardingStep1Payload):
+    updated_at: str
+    status: str = "success"
+    message: str = "Konfigurasi identifikasi pos berhasil disimpan"
+
+
+class OnboardingStep4Payload(BaseModel):
+    camera_code: str = Field("empang", description="Kode kamera target ('empang', 'surken', 'balaikota')")
+    threshold_seconds: int = Field(120, ge=30, le=600, description="Ambang batas durasi henti ngetem dalam detik")
+    tolerance_buffer_seconds: int = Field(15, ge=0, le=60, description="Buffer toleransi dinamis (lansia/barang bawaan)")
+    is_draft: bool = Field(False, description="Tandai draf jika belum final")
+
+
+class OnboardingStep4Response(BaseModel):
+    camera_code: str
+    threshold_seconds: int
+    tolerance_buffer_seconds: int
+    total_effective_threshold: int
+    estimated_violations_per_day: int
+    congestion_reduction_percent: float
+    status: str = "success"
+    message: str = "Parameter durasi & sensitivitas alarm berhasil diperbarui"
+    updated_at: str

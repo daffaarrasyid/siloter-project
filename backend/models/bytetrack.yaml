@@ -1,0 +1,30 @@
+# ==============================================================================
+# ByteTrack Configuration Tuned for SILOTER 1 FPS CCTV Sampling
+# ==============================================================================
+# Rationale:
+# 1. 1 FPS Low-Frame Rate: Vehicles cover larger pixel distances between consecutive
+#    frames compared to 30 FPS video. Lowering match_thresh (IOU threshold) prevents
+#    false track fragmentation.
+# 2. Heavy Occlusion in BTM (Bogor Trade Mall): Angkots often queue closely or get
+#    blocked by buses for 5-15 seconds. Setting track_buffer to 45 frames (45 seconds)
+#    allows ByteTrack to preserve the same track_id through prolonged occlusions.
+# ==============================================================================
+
+tracker_type: bytetrack
+
+# Confidence thresholds for first and second association phases
+track_high_thresh: 0.35      # Min detection confidence for primary association
+track_low_thresh: 0.10       # Min detection confidence for secondary association
+new_track_thresh: 0.45       # Min confidence required to spawn a new track_id
+
+# Track buffer: frame count before a lost track is permanently discarded
+# At 1 FPS, 45 frames = 45 seconds of occlusion recovery window
+track_buffer: 45
+
+# Matching threshold (IoU metric) between predicted track location and detection
+# Relaxed from 0.8 to 0.65 to accommodate 1-second interval vehicle motion
+match_thresh: 0.65
+
+# Fuse confidence score with IoU score for matching robustness
+fuse_score: True
+

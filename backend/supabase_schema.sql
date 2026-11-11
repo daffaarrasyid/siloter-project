@@ -74,6 +74,7 @@ CREATE TABLE IF NOT EXISTS public.violation_events (
     model_used TEXT NOT NULL,
     inference_ms DOUBLE PRECISION,
     evidence_path TEXT,
+    session_type TEXT,
     validation_status TEXT NOT NULL DEFAULT 'Pending' CHECK (validation_status IN ('Pending', 'Valid', 'Invalid')),
     validated_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
     validated_at TIMESTAMPTZ,
@@ -101,20 +102,22 @@ CREATE INDEX IF NOT EXISTS idx_camera_configs_code ON public.camera_configs(came
 -- 7. Supabase Storage Bucket Initialization
 -- ==============================================================================
 INSERT INTO storage.buckets (id, name, public)
-VALUES ('evidence', 'evidence', true)
+VALUES 
+    ('violation-evidence', 'violation-evidence', true),
+    ('evidence', 'evidence', true)
 ON CONFLICT (id) DO UPDATE SET public = true;
 
 -- Storage Policy: Allow public read access to evidence screenshots
 DROP POLICY IF EXISTS "Public Access for Evidence Images" ON storage.objects;
 CREATE POLICY "Public Access for Evidence Images"
 ON storage.objects FOR SELECT
-USING (bucket_id = 'evidence');
+USING (bucket_id IN ('violation-evidence', 'evidence'));
 
 -- Storage Policy: Allow authenticated/service-role upload to evidence bucket
 DROP POLICY IF EXISTS "Allow Upload to Evidence Bucket" ON storage.objects;
 CREATE POLICY "Allow Upload to Evidence Bucket"
 ON storage.objects FOR INSERT
-WITH CHECK (bucket_id = 'evidence');
+WITH CHECK (bucket_id IN ('violation-evidence', 'evidence'));
 
 -- ==============================================================================
 -- 8. Row Level Security (RLS) Policies
@@ -173,7 +176,7 @@ VALUES
     (
         'empang',
         'Jl. Djuanda - Empang',
-        'https://bsw.kotabogor.go.id/live/empang.m3u8',
+        'https://restreamer3.kotabogor.go.id/memfs/31b05614-19d8-492e-b244-903e8aa28292_output_0.m3u8?session=CuUsqAB6iKy6e7abEQhpj5',
         1920,
         1080,
         '[[0.15, 0.45], [0.75, 0.45], [0.85, 0.95], [0.05, 0.95]]'::jsonb,
@@ -183,7 +186,7 @@ VALUES
     (
         'surken',
         'Jl. Djuanda - Suryakencana',
-        'https://bsw.kotabogor.go.id/live/surken.m3u8',
+        'https://restreamer3.kotabogor.go.id/memfs/f6b50f38-9184-418e-b3f9-05faaa9b387d_output_0.m3u8?session=kWKDDNXfDZUySPTX5GgTSk',
         1920,
         1080,
         '[[0.20, 0.40], [0.80, 0.40], [0.90, 0.95], [0.10, 0.95]]'::jsonb,
@@ -193,7 +196,7 @@ VALUES
     (
         'balaikota',
         'Jl. Djuanda - Balaikota',
-        'https://bsw.kotabogor.go.id/live/balaikota.m3u8',
+        'https://restreamer2.kotabogor.go.id/memfs/f707b72a-5c95-421a-9f3a-2e478794bd76_output_0.m3u8?session=AzjP8VmQxJDBFdZhJJt7C5',
         704,
         576,
         '[[0.25, 0.35], [0.75, 0.35], [0.85, 0.90], [0.15, 0.90]]'::jsonb,

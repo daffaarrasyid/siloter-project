@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     # Supabase Credentials (PostgreSQL & Storage)
     SUPABASE_URL: str = "https://zbgbsffibkuvpazxjlsa.supabase.co"
     SUPABASE_SERVICE_ROLE_KEY: str = ""
-    SUPABASE_STORAGE_BUCKET: str = "evidence"
+    SUPABASE_STORAGE_BUCKET: str = "violation-evidence"
 
     # AI & Computer Vision Models
     DEFAULT_YOLO_MODEL: str = "yolov26n_best.pt"

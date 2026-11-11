@@ -1,5 +1,28 @@
 # AGENTS.md
 
+# AI Agent Guidelines
+
+## Skill Usage
+
+The agent must discover and use relevant skills from `.agents/skills/` when performing project tasks.
+
+### Frontend Development
+- Use `design-taste-frontend` when creating, redesigning, or improving UI/UX.
+- Apply anti-slop principles to avoid generic AI-generated interfaces.
+- Maintain consistency with the existing SILOTER design system.
+
+### Documentation and Writing
+- Use `avoid-ai-writing` when reviewing or improving English documentation and written content.
+- Preserve technical accuracy, terminology, and project-specific information.
+- Do not rewrite technical documentation without understanding its context.
+
+### General Rules
+- Read the relevant skill instructions before executing the task.
+- Do not force irrelevant skills into unrelated tasks.
+- Follow the existing architecture and conventions documented in `ARCHITECTURE.md`.
+- Inspect existing code before modifying it.
+- Verify changes through appropriate tests before reporting completion.
+
 ## 1. Introduction and Role
 
 This document defines the strict operational rules, workflows, and constraints for all AI coding agents working on the **SILOTER** (*Sistem Informasi dan Deteksi Loitering Angkutan Umum Terpadu*) repository. SILOTER is a decoupled, real-time traffic monitoring and computer vision platform built with **Next.js (App Router, TypeScript)**, **Python FastAPI**, **Ultralytics (YOLOv26n & YOLOv8)**, **ByteTrack**, **OpenCV**, and **Supabase (PostgreSQL, Storage, Auth)**. AI agents must follow these instructions to understand requirements, plan, implement changes, and manage the codebase.
@@ -245,3 +268,18 @@ When uncertain, prioritize:
 **Correctness → Security & Fair-Use Compliance → Requirements (`PRD.md`) → Existing Architecture (`ARCHITECTURE.md`) → Consistency → Simplicity**
 
 Always prefer: The smallest correct change that satisfies the user's request and the project's source-of-truth documents.
+
+<!-- antislop:start -->
+## antislop
+For UI, copy, people, mobile layout, or code comments work, read these installed skill files directly (use these paths even if a same-named global skill exists):
+- Core filter, always on: `antislop`: `.agents/skills/antislop/SKILL.md`
+- UI / visual: `antislop-ui`: `.agents/skills/antislop-ui/SKILL.md`
+- Copy & text: `antislop-copywriting`: `.agents/skills/antislop-copywriting/SKILL.md`
+- People: `antislop-human`: `.agents/skills/antislop-human/SKILL.md`
+- Code comments: `antislop-code`: `.agents/skills/antislop-code/SKILL.md`
+- Mobile / responsive: `antislop-layoutmobile`: `.agents/skills/antislop-layoutmobile/SKILL.md`
+Before starting, follow the core's "Two Usage Modes" section in strict order: explicit session instruction first, then global preference, then ask. A session instruction always wins. For a resolved mode, say `antislop active: <mode> (session override).` or `antislop active: <mode> (global preference).` once before presenting findings or making edits, using the actual mode and source. Acknowledging the user's request without naming the source does not replace this notice.
+Only an explicit choice of antislop during or after selects a session mode. A request to review, audit, or avoid file edits does not select a mode; read the global preference in that case. Another skill's mode does not select antislop's mode.
+If the mode is unresolved, ask during/after and end the response; wait for the answer before any UI review, planning, or concept. For read-only tasks, put the active-mode notice only at the start of the final answer, never in progress messages. For editing tasks, announce before the first edit and omit it from the final answer.
+To update antislop later: `npx antislop-ai --update`, or run `npx antislop-ai` and pick Overwrite them.
+<!-- antislop:end -->
