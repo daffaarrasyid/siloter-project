@@ -1,0 +1,19 @@
+# Core API & ASGI Server
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+python-multipart>=0.0.12
+websockets>=13.0
+
+# Configuration & Validation
+python-dotenv>=1.0.1
+pydantic-settings>=2.5.0
+
+# Computer Vision & Deep Learning
+ultralytics>=8.3.0
+opencv-python-headless>=4.10.0
+supervision>=0.23.0
+numpy>=1.26.0
+
+# Database & Cloud Storage
+supabase>=2.8.0
+
