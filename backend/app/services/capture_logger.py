@@ -75,6 +75,134 @@ class CaptureLoggerService:
         self._camera_uuid_cache[code] = fallback_uuid
         return fallback_uuid
 
+    @staticmethod
+    def enhance_crop(crop: np.ndarray) -> np.ndarray:
+        """
+        Enhances cropped vehicle image using CLAHE on luminance channel,
+        bilateral filter for compression noise removal, and subtle unsharp masking for edge crispness.
+        """
+        if crop.size == 0 or crop.shape[0] < 5 or crop.shape[1] < 5:
+            return crop
+
+        try:
+            # 1. Bilateral Filter: Smooth HLS compression artifacts while keeping edges sharp
+            denoised = cv2.bilateralFilter(crop, d=7, sigmaColor=50, sigmaSpace=50)
+
+            # 2. CLAHE (Contrast Limited Adaptive Histogram Equalization) in LAB color space
+            lab = cv2.cvtColor(denoised, cv2.COLOR_BGR2LAB)
+            l_channel, a_channel, b_channel = cv2.split(lab)
+            clahe = cv2.createCLAHE(clipLimit=2.2, tileGridSize=(8, 8))
+            enhanced_l = clahe.apply(l_channel)
+            merged_lab = cv2.merge((enhanced_l, a_channel, b_channel))
+            enhanced_bgr = cv2.cvtColor(merged_lab, cv2.COLOR_LAB2BGR)
+
+            # 3. Subtle Unsharp Masking for crisp stickers, lettering, and plate contours
+            gaussian = cv2.GaussianBlur(enhanced_bgr, (0, 0), 2.0)
+            sharpened = cv2.addWeighted(enhanced_bgr, 1.25, gaussian, -0.25, 0)
+            return sharpened
+        except Exception:
+            return crop
+
+    def apply_picture_in_picture_zoom(
+        self,
+        frame: np.ndarray,
+        bbox: List[float],
+        track_id: str = "",
+    ) -> np.ndarray:
+        """
+        Overlays an enhanced zoomed-in Picture-in-Picture (PIP) inset of the target vehicle
+        in the top-right corner of the full frame to maintain legal spatial context and high-res vehicle detail.
+        """
+        if not bbox or len(bbox) < 4:
+            return frame
+
+        canvas = frame.copy()
+        h, w = canvas.shape[:2]
+
+        x1, y1, x2, y2 = bbox
+        bw = max(10.0, x2 - x1)
+        bh = max(10.0, y2 - y1)
+
+        # Pad 20% on all sides for vehicle visual breathing room
+        pad_x = int(bw * 0.20)
+        pad_y = int(bh * 0.20)
+        crop_x1 = max(0, int(x1 - pad_x))
+        crop_y1 = max(0, int(y1 - pad_y))
+        crop_x2 = min(w, int(x2 + pad_x))
+        crop_y2 = min(h, int(y2 + pad_y))
+
+        crop = canvas[crop_y1:crop_y2, crop_x1:crop_x2]
+        if crop.size == 0 or crop.shape[0] < 10 or crop.shape[1] < 10:
+            return canvas
+
+        # Enhance vehicle crop with CLAHE + Bilateral + Sharpen
+        enhanced_crop = self.enhance_crop(crop)
+
+        # Calculate inset box dimensions (~24% of frame width, keeping aspect ratio)
+        target_w = max(240, min(int(w * 0.24), 420))
+        crop_aspect = enhanced_crop.shape[0] / max(1, enhanced_crop.shape[1])
+        target_h = int(target_w * crop_aspect)
+
+        # Clamp max height to 34% of frame height
+        max_h = int(h * 0.34)
+        if target_h > max_h:
+            target_h = max_h
+            target_w = int(target_h / max(0.01, crop_aspect))
+
+        # Upscale using Lanczos-4 for crisp, clean perbesaran detail
+        resized_crop = cv2.resize(
+            enhanced_crop, (target_w, target_h), interpolation=cv2.INTER_LANCZOS4
+        )
+
+        margin = 14
+        header_h = 24
+        ix1 = w - target_w - margin
+        iy1 = margin
+        ix2 = ix1 + target_w
+        iy2 = iy1 + target_h + header_h
+
+        # Boundary check
+        if ix1 < 0 or iy1 < 0 or ix2 > w or iy2 > h:
+            return canvas
+
+        # Draw dark translucent drop shadow behind inset container
+        shadow_margin = 4
+        sx1 = max(0, ix1 - shadow_margin)
+        sy1 = max(0, iy1 - shadow_margin)
+        sx2 = min(w, ix2 + shadow_margin)
+        sy2 = min(h, iy2 + shadow_margin)
+
+        overlay = canvas.copy()
+        cv2.rectangle(overlay, (sx1, sy1), (sx2, sy2), (15, 23, 42), -1)
+        cv2.addWeighted(overlay, 0.45, canvas, 0.55, 0, canvas)
+
+        # Header banner (Red badge for violation focus)
+        cv2.rectangle(canvas, (ix1, iy1), (ix2, iy1 + header_h), (30, 30, 220), -1)
+
+        # Header text
+        header_text = f"DETAIL TARGET ({track_id or 'ANGKOT'}) - ENHANCED"
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        font_scale = 0.38
+        thickness = 1
+        cv2.putText(
+            canvas,
+            header_text,
+            (ix1 + 8, iy1 + 16),
+            font,
+            font_scale,
+            (255, 255, 255),
+            thickness,
+            cv2.LINE_AA,
+        )
+
+        # Place enhanced crop into canvas
+        canvas[iy1 + header_h : iy2, ix1 : ix2] = resized_crop
+
+        # Draw solid red border around inset container
+        cv2.rectangle(canvas, (ix1, iy1), (ix2, iy2), (0, 0, 255), 2, cv2.LINE_AA)
+
+        return canvas
+
     def apply_evidence_watermark(
         self,
         frame: np.ndarray,
@@ -211,12 +339,20 @@ class CaptureLoggerService:
         camera_uuid = self.get_or_create_camera_uuid(camera_code)
         session_type = determine_session_type(now)
 
-        # 1. Enforce Single-Capture Lock (Rule 11 AGENTS.md)
+        # 1. Enforce Single-Capture Lock (Rule 11 AGENTS.md) and bind event_id for dynamic duration sync
         vehicle_state.is_captured = True
+        vehicle_state.event_id = event_id
 
-        # 2. Watermark
-        watermarked_frame = self.apply_evidence_watermark(
+        # 2. Picture-in-Picture Zoom & Enhancement on target vehicle
+        pip_frame = self.apply_picture_in_picture_zoom(
             frame=annotated_frame,
+            bbox=getattr(vehicle_state, "last_bbox", []),
+            track_id=getattr(vehicle_state, "track_id", ""),
+        )
+
+        # 3. Watermark
+        watermarked_frame = self.apply_evidence_watermark(
+            frame=pip_frame,
             camera_name=camera_name,
             camera_code=camera_code,
             timestamp=now,
@@ -296,6 +432,46 @@ class CaptureLoggerService:
         )
 
         return event_record
+
+    def update_violation_duration(
+        self,
+        event_id: str,
+        duration_seconds: int,
+        is_final: bool = False,
+        camera_code: str = "",
+    ) -> None:
+        """
+        Dynamically updates loitering duration in database and broadcasts
+        real-time WebSocket duration update without spamming storage uploads (AGENTS.md Rule 11).
+        """
+        # 1. Update in-memory local cache
+        for ev in self._local_event_logs:
+            if ev.get("id") == event_id:
+                ev["duration_seconds"] = duration_seconds
+                break
+
+        # 2. Update Supabase PostgreSQL
+        supabase = get_supabase_client()
+        if supabase:
+            try:
+                supabase.table("violation_events").update(
+                    {"duration_seconds": duration_seconds}
+                ).eq("id", event_id).execute()
+                logger.debug(
+                    f"Updated violation_event {event_id} duration: {duration_seconds}s (is_final={is_final})"
+                )
+            except Exception as e:
+                logger.warning(f"Could not update violation duration in Supabase: {e}")
+
+        # 3. Broadcast real-time WebSocket pulse (< 5s latency NFR-03)
+        ws_payload = {
+            "event_type": "duration_update",
+            "event_id": event_id,
+            "duration_seconds": duration_seconds,
+            "is_final": is_final,
+            "camera_code": camera_code,
+        }
+        connection_manager.broadcast_sync(ws_payload)
 
     def get_recent_events(self, limit: int = 50) -> List[Dict[str, Any]]:
         """Retrieves recent violation events (from Supabase or local cache)."""

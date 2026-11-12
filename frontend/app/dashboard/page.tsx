@@ -228,7 +228,26 @@ export default function DashboardPage() {
       ws.onmessage = (msg) => {
         try {
           const data = JSON.parse(msg.data);
-          if (data && data.event_id) {
+          if (data && data.event_type === "duration_update" && data.event_id) {
+            // Pembaruan durasi ngetem real-time (Heartbeat & Final Departure)
+            setEvents((prev) =>
+              prev.map((ev) =>
+                ev.id === data.event_id
+                  ? { ...ev, durationSeconds: data.duration_seconds }
+                  : ev
+              )
+            );
+
+            setActiveVerifyEvent((prev) =>
+              prev && prev.id === data.event_id
+                ? { ...prev, durationSeconds: data.duration_seconds }
+                : prev
+            );
+
+            if (data.is_final) {
+              loadBackendData();
+            }
+          } else if (data && data.event_id) {
             toast.error(
               `Pelanggaran Loitering Baru: ${data.vehicle_track_id} (${data.duration_seconds}d di ${data.camera_name})`
             );
@@ -803,12 +822,16 @@ export default function DashboardPage() {
             </div>
 
             <div className="p-6 space-y-4">
-              <div className="aspect-video w-full rounded-xl overflow-hidden bg-slate-900 border border-slate-200">
+              <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-slate-900 border border-slate-200 group">
                 <img
                   src={activeVerifyEvent.evidenceImage}
                   alt="Bukti CCTV"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
+                <div className="absolute top-2.5 left-2.5 bg-slate-950/80 backdrop-blur-xs text-white text-[10px] font-semibold px-2 py-0.5 rounded-md border border-slate-700/80 flex items-center gap-1.5 shadow-xs">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Auto-Capture Inset Zoom &amp; Enhanced
+                </div>
               </div>
 
               <div className="p-3 bg-slate-50 rounded-xl space-y-1 text-xs">

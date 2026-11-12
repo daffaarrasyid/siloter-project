@@ -26,6 +26,8 @@ class TrackLoiteringState:
     inside_roi: bool = False
     is_violation: bool = False
     is_captured: bool = False  # Single-capture lock per loitering cycle (AGENTS.md Rule 11)
+    event_id: Optional[str] = None  # DB violation_events.id for real-time synchronization
+    last_synced_duration: int = 0  # Last duration_seconds synced to DB and WebSocket clients
     last_anchor: Tuple[int, int] = (0, 0)
     last_bbox: List[float] = field(default_factory=list)
     confidence: float = 0.0
@@ -42,6 +44,8 @@ class LoiteringEvaluationResult:
     active_violations: List[TrackLoiteringState]
     new_violations: List[TrackLoiteringState]  # Triggered in this exact frame cycle for Auto-Capture
     roi_pixel_polygon: np.ndarray
+    duration_updates: List[TrackLoiteringState] = field(default_factory=list)  # Heartbeat duration updates
+    departed_violations: List[TrackLoiteringState] = field(default_factory=list)  # Violations that finished loitering
 
 
 class LoiteringEngine:
@@ -145,6 +149,8 @@ class LoiteringEngine:
 
         active_track_ids_this_frame = set()
         new_violations: List[TrackLoiteringState] = []
+        duration_updates: List[TrackLoiteringState] = []
+        departed_violations: List[TrackLoiteringState] = []
         annotated_frame = frame.copy()
 
         with self._lock:
@@ -183,11 +189,17 @@ class LoiteringEngine:
                             if not state.is_captured:
                                 # First time exceeding threshold -> trigger Auto-Capture!
                                 state.is_captured = True
+                                state.last_synced_duration = state.duration_seconds
                                 new_violations.append(state)
                                 logger.warning(
                                     f"[{camera_code}] VIOLATION TRIGGERED: {track_id} "
                                     f"loitering for {state.duration_seconds}s (threshold: {effective_threshold}s)"
                                 )
+                            else:
+                                # Vehicle continues loitering: trigger periodic heartbeat update (every 5 seconds)
+                                if state.event_id and (state.duration_seconds - state.last_synced_duration >= 5):
+                                    state.last_synced_duration = state.duration_seconds
+                                    duration_updates.append(state)
                     else:
                         # First observation inside ROI
                         new_state = TrackLoiteringState(
@@ -199,6 +211,7 @@ class LoiteringEngine:
                             inside_roi=True,
                             is_violation=(1 >= effective_threshold),
                             is_captured=False,
+                            last_synced_duration=0,
                             last_anchor=anchor,
                             last_bbox=bbox,
                             confidence=conf,
@@ -207,6 +220,7 @@ class LoiteringEngine:
                         camera_timers[track_id] = new_state
                         if new_state.is_violation and not new_state.is_captured:
                             new_state.is_captured = True
+                            new_state.last_synced_duration = 1
                             new_violations.append(new_state)
                 else:
                     # Vehicle is OUTSIDE ROI
@@ -220,6 +234,12 @@ class LoiteringEngine:
 
                         # Reset timer if it stays outside beyond grace period
                         if state.missed_frames > self.max_grace_seconds:
+                            if state.is_captured and state.event_id:
+                                logger.info(
+                                    f"[{camera_code}] Vehicle {track_id} departed ROI. "
+                                    f"Final loitering duration: {state.duration_seconds}s"
+                                )
+                                departed_violations.append(state)
                             del camera_timers[track_id]
 
             # B. Handle vehicles NOT detected in this frame (Occlusion Grace Period)
@@ -233,6 +253,12 @@ class LoiteringEngine:
                     logger.debug(
                         f"[{camera_code}] {tid} expired after {state.missed_frames} absent frames. Timer reset."
                     )
+                    if state.is_captured and state.event_id:
+                        logger.info(
+                            f"[{camera_code}] Vehicle {tid} tracking lost. "
+                            f"Final loitering duration: {state.duration_seconds}s"
+                        )
+                        departed_violations.append(state)
                     del camera_timers[tid]
 
             # Collect active list
@@ -255,6 +281,8 @@ class LoiteringEngine:
             tracked_states=all_states,
             active_violations=active_violations,
             new_violations=new_violations,
+            duration_updates=duration_updates,
+            departed_violations=departed_violations,
             roi_pixel_polygon=roi_contour,
         )
 

@@ -452,7 +452,7 @@ class CameraStreamWorker:
 
             # Auto-Capture & broadcast newly triggered violations
             for violation in eval_result.new_violations:
-                capture_logger.log_and_broadcast_violation(
+                record = capture_logger.log_and_broadcast_violation(
                     camera_code=self.camera_code,
                     camera_name=self.camera_name,
                     vehicle_state=violation,
@@ -461,6 +461,28 @@ class CameraStreamWorker:
                     inference_ms=det_result.get("inference_ms", 0.0),
                     threshold_seconds=self.threshold_seconds,
                 )
+                if record and record.get("id"):
+                    violation.event_id = record["id"]
+
+            # Heartbeat duration updates for active loitering vehicles (every 5 seconds)
+            for active_v in getattr(eval_result, "duration_updates", []):
+                if active_v.event_id:
+                    capture_logger.update_violation_duration(
+                        event_id=active_v.event_id,
+                        duration_seconds=active_v.duration_seconds,
+                        is_final=False,
+                        camera_code=self.camera_code,
+                    )
+
+            # Finalize total duration when vehicle departs the ROI
+            for departed_v in getattr(eval_result, "departed_violations", []):
+                if departed_v.event_id:
+                    capture_logger.update_violation_duration(
+                        event_id=departed_v.event_id,
+                        duration_seconds=departed_v.duration_seconds,
+                        is_final=True,
+                        camera_code=self.camera_code,
+                    )
         except Exception as e:
             logger.debug(f"[{self.camera_code}] CV pipeline evaluation notice: {e}")
             annotated = frame

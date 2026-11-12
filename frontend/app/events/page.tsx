@@ -292,7 +292,20 @@ export default function VerificationPage() {
       ws.onmessage = (msg) => {
         try {
           const data = JSON.parse(msg.data);
-          if (data && data.event_id) {
+          if (data && data.event_type === "duration_update" && data.event_id) {
+            setItems((prev) =>
+              prev.map((it) =>
+                it.id === data.event_id
+                  ? { ...it, durationSeconds: data.duration_seconds }
+                  : it
+              )
+            );
+            setSelectedItem((prev) =>
+              prev && prev.id === data.event_id
+                ? { ...prev, durationSeconds: data.duration_seconds }
+                : prev
+            );
+          } else if (data && data.event_id) {
             toast.error(
               `Pelanggaran Baru Masuk Antrean: ${data.vehicle_track_id} (${data.camera_name})`
             );
@@ -707,7 +720,7 @@ export default function VerificationPage() {
                   <div className="flex items-center justify-between mb-2 text-xs">
                     <span className="font-bold text-slate-900 flex items-center gap-1.5">
                       <Video className="w-3.5 h-3.5 text-blue-600" />
-                      BUKTI CCTV
+                      Bukti CCTV
                     </span>
                     <span className="text-[10px] font-mono text-slate-400">
                       CAM-01 &bull; 1920x1080 @ ~1 FPS
@@ -715,31 +728,19 @@ export default function VerificationPage() {
                   </div>
 
                   {/* Frame Area */}
-                  <div className="relative aspect-video rounded-xl overflow-hidden bg-slate-950 border border-slate-200">
+                  <div className="relative aspect-video rounded-xl overflow-hidden bg-slate-950 border border-slate-200 group">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={`http://localhost:8000/api/stream/${selectedItem.cameraCode}`}
+                      src={selectedItem.evidenceUrl || `http://localhost:8000/api/stream/${selectedItem.cameraCode}`}
                       alt="Bukti CCTV"
-                      className="w-full h-full object-cover opacity-90"
+                      className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-102"
                       onError={(e) => {
-                        e.currentTarget.style.display = "none";
+                        (e.target as HTMLImageElement).src = `http://localhost:8000/api/stream/${selectedItem.cameraCode}`;
                       }}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900 to-slate-950 pointer-events-none -z-10 flex items-center justify-center text-[10px] text-slate-500">
-                      Simulasi Frame Bukti Auto-Capture
-                    </div>
-
-                    {/* HUD Bounding Box */}
-                    <div className="absolute top-10 left-8 right-16 bottom-8 border-2 border-dashed border-blue-500/80 bg-blue-500/10 rounded-lg pointer-events-none">
-                      <div className="absolute -top-2.5 left-2 bg-blue-700 text-white text-[8px] font-bold px-1.5 py-0.5 rounded">
-                        ROI-01: Simpang BTM (Zona Larangan Berhenti)
-                      </div>
-                    </div>
-
-                    <div className="absolute bottom-8 left-14 w-28 h-18 border-2 border-red-500 bg-red-500/20 rounded pointer-events-none p-1">
-                      <span className="bg-red-600 text-white text-[7.5px] font-black px-1 rounded block">
-                        FRAME #084201 | ANGKOT #142 84s
-                      </span>
+                    <div className="absolute top-2.5 left-2.5 bg-slate-950/80 backdrop-blur-xs text-white text-[10px] font-semibold px-2 py-0.5 rounded-md border border-slate-700/80 flex items-center gap-1.5 shadow-xs">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      Auto-Capture Inset Zoom &amp; Enhanced
                     </div>
                   </div>
 
