@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { Sidebar } from "@/components/layout/sidebar";
+import { Navbar } from "@/components/layout/navbar";
 import {
   Video,
   AlertTriangle,
@@ -71,6 +73,10 @@ export default function VerificationPage() {
     pendingToday: 12,
     aiConfidencePercent: 94.8,
   });
+
+  // Paginasi Antrean (Revisi Item 7)
+  const [queuePage, setQueuePage] = useState<number>(1);
+  const queuePageSize = 5;
 
   // Antrean Verifikasi (Data Sesuai Mockup & Patuh AI Single-Class)
   const [items, setItems] = useState<VerificationItem[]>([
@@ -211,11 +217,13 @@ export default function VerificationPage() {
     setNotesForm(selectedItem.notes);
   }, [selectedItem]);
 
-  // Fetch data statistik dari backend
+  // Fetch data statistik dan daftar kejadian antrean dari backend
   useEffect(() => {
-    async function loadStats() {
+    async function loadData() {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      
+      // 1. Load Stats
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
         const res = await fetch(`${apiUrl}/api/events/summary/stats`);
         if (res.ok) {
           const data = await res.json();
@@ -228,8 +236,116 @@ export default function VerificationPage() {
       } catch (err) {
         console.warn("Backend KPI stats offline, using defaults:", err);
       }
+
+      // 2. Load Events List
+      try {
+        const resEvents = await fetch(`${apiUrl}/api/events?limit=50`);
+        if (resEvents.ok) {
+          const eventsData = await resEvents.json();
+          if (Array.isArray(eventsData) && eventsData.length > 0) {
+            const mappedItems: VerificationItem[] = eventsData.map((ev: any, idx: number) => {
+              const dt = ev.detected_at ? new Date(ev.detected_at) : new Date();
+              return {
+                id: ev.id,
+                incidentCode: `#N-${ev.id.slice(0, 8).toUpperCase()}`,
+                trackId: ev.vehicle_track_id || `Track #${130 + idx}`,
+                cameraCode: ev.camera_code || "empang",
+                cameraName: ev.camera_name || "Simpang BTM (CAM-01)",
+                cameraLabel: ev.camera_name || "Simpang BTM (CAM-01)",
+                detectedAt: dt.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }) + `, ` + dt.toLocaleTimeString("id-ID", { hour12: false }) + ` WIB`,
+                timeWib: dt.toLocaleTimeString("id-ID", { hour12: false }) + ` WIB`,
+                durationSeconds: ev.duration_seconds || 75,
+                thresholdSeconds: 60,
+                plateNumber: ev.plate_number || (idx === 0 ? "F 1934 AK" : idx === 1 ? "F 1802 BC" : "Belum Diinput"),
+                isPlateManual: Boolean(ev.plate_number),
+                status: (ev.validation_status as "Pending" | "Valid" | "Invalid") || "Pending",
+                trayekCode: idx % 2 === 0 ? "02" : "10",
+                trayekName: idx % 2 === 0 ? "Trayek 02: Sukasari – Bubulak PP" : "Trayek 10: Bantar Kemang – Merdeka PP",
+                trayekSub: idx % 2 === 0 ? "Bodi Hijau Pintu Kuning • Organda Kota Bogor" : "Bodi Hijau Garis Merah • Organda Kota Bogor",
+                reason: ev.reason || "Ngetem Menghambat Lalu Lintas",
+                notes: ev.notes || "Pengemudi berhenti di bahu jalan persimpangan melebihi toleransi waktu.",
+                verifier: "Budi Santoso, S.T.",
+                evidenceUrl: ev.evidence_image_url || "/placeholder-angkot.jpg",
+                cropUrl: ev.evidence_image_url || "/placeholder-crop.jpg",
+                aiConfidence: 94.5,
+              };
+            });
+            setItems(mappedItems);
+            setSelectedItem(mappedItems[0]);
+          }
+        }
+      } catch (err) {
+        console.warn("Backend events offline, using initial dataset:", err);
+      }
     }
-    loadStats();
+
+    loadData();
+  }, []);
+
+  // Real-time WebSocket connection to receive auto-capture alerts
+  useEffect(() => {
+    let ws: WebSocket | null = null;
+    try {
+      const wsUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace("http", "ws");
+      ws = new WebSocket(`${wsUrl}/ws/alerts`);
+
+      ws.onmessage = (msg) => {
+        try {
+          const data = JSON.parse(msg.data);
+          if (data && data.event_id) {
+            toast.error(
+              `Pelanggaran Baru Masuk Antrean: ${data.vehicle_track_id} (${data.camera_name})`
+            );
+
+            const newItem: VerificationItem = {
+              id: data.event_id,
+              incidentCode: `#N-${data.event_id.slice(0, 8).toUpperCase()}`,
+              trackId: data.vehicle_track_id,
+              cameraCode: data.camera_code || "empang",
+              cameraName: data.camera_name || "Simpang BTM (CAM-01)",
+              cameraLabel: data.camera_name || "Simpang BTM (CAM-01)",
+              detectedAt:
+                new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }) +
+                `, ` +
+                new Date().toLocaleTimeString("id-ID", { hour12: false }) +
+                ` WIB`,
+              timeWib: new Date().toLocaleTimeString("id-ID", { hour12: false }) + ` WIB`,
+              durationSeconds: data.duration_seconds || 60,
+              thresholdSeconds: data.threshold_seconds || 60,
+              plateNumber: "Belum Diinput",
+              isPlateManual: false,
+              status: "Pending",
+              trayekCode: "02",
+              trayekName: "Trayek 02: Sukasari – Bubulak PP",
+              trayekSub: "Bodi Hijau Pintu Kuning • Organda Kota Bogor",
+              reason: "Ngetem Menghambat Lalu Lintas",
+              notes: "Auto-Capture sistem: Kendaraan terdeteksi berhenti di zona larangan.",
+              verifier: "Budi Santoso, S.T.",
+              evidenceUrl: data.evidence_url || "/placeholder-angkot.jpg",
+              cropUrl: data.evidence_url || "/placeholder-crop.jpg",
+              aiConfidence: 94.5,
+            };
+
+            setItems((prev) => [newItem, ...prev]);
+            setKpiStats((prev) => ({
+              ...prev,
+              totalToday: prev.totalToday + 1,
+              pendingToday: prev.pendingToday + 1,
+            }));
+          }
+        } catch {
+          // ignore non-json pings
+        }
+      };
+    } catch (e) {
+      console.warn("WebSocket alerts connection failed:", e);
+    }
+
+    return () => {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.close();
+      }
+    };
   }, []);
 
   // Action: Tandai Valid
@@ -263,6 +379,10 @@ export default function VerificationPage() {
     );
     setItems(updated);
     setSelectedItem((prev) => ({ ...prev, status: "Valid" }));
+    setKpiStats((prev) => ({
+      ...prev,
+      pendingToday: Math.max(0, prev.pendingToday - 1),
+    }));
     toast.success(`Kejadian ${selectedItem.incidentCode} terkonfirmasi VALID.`);
   };
 
@@ -305,164 +425,49 @@ export default function VerificationPage() {
     );
     setItems(updated);
     setSelectedItem((prev) => ({ ...prev, status: "Invalid" }));
+    setKpiStats((prev) => ({
+      ...prev,
+      pendingToday: Math.max(0, prev.pendingToday - 1),
+    }));
     toast.warning(`Kejadian ${selectedItem.incidentCode} ditolak (INVALID / Bukan Ngetem).`);
   };
 
   return (
     <div className="flex h-screen w-full bg-[#f4f7fc] text-slate-800 font-sans overflow-hidden">
-      {/* =========================================================================
-          SIDEBAR KIRI (NAVIGASI UTAMA DISHUB)
-          ========================================================================= */}
-      <aside className="w-64 bg-white border-r border-slate-200/90 flex flex-col justify-between p-5 select-none shrink-0 z-20">
-        <div>
-          {/* Logo & Brand Header */}
-          <div className="flex items-center gap-2.5 mb-8 px-1">
-            <div className="relative w-7 h-7 flex items-center justify-center">
-              <Image
-                src="/logo.png"
-                alt="Logo SILOTER"
-                width={28}
-                height={28}
-                className="object-contain"
-                priority
-              />
-            </div>
-            <span className="text-xl font-black tracking-tight text-slate-900">
-              SILOTER
-            </span>
-          </div>
-
-          {/* Section: NAVIGASI UTAMA */}
-          <div className="mb-6">
-            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block px-3 mb-2">
-              NAVIGASI UTAMA
-            </span>
-            <nav className="space-y-1">
-              <button
-                type="button"
-                onClick={() => router.push("/dashboard")}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 font-semibold text-xs transition-colors text-left cursor-pointer"
-              >
-                <Video className="w-4 h-4 text-slate-400" />
-                <span>Pantau CCTV</span>
-              </button>
-
-              <button
-                type="button"
-                className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-xs shadow-xs text-left"
-              >
-                <div className="flex items-center gap-3">
-                  <ShieldCheck className="w-4 h-4" />
-                  <span>Verifikasi</span>
-                </div>
-                <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                  {kpiStats.pendingToday}
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => router.push("/onboarding/step3")}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 font-semibold text-xs transition-colors text-left cursor-pointer"
-              >
-                <Layers className="w-4 h-4 text-slate-400" />
-                <span>Zona &amp; Durasi</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => router.push("/analytics")}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 font-semibold text-xs transition-colors text-left cursor-pointer"
-              >
-                <BarChart3 className="w-4 h-4 text-slate-400" />
-                <span>Analitik &amp; Laporan</span>
-              </button>
-            </nav>
-          </div>
-
-          {/* Section: ADMIN */}
-          <div>
-            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block px-3 mb-2">
-              ADMIN
-            </span>
-            <nav className="space-y-1">
-              <button
-                type="button"
-                onClick={() => router.push("/users")}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 font-semibold text-xs transition-colors text-left cursor-pointer"
-              >
-                <Users className="w-4 h-4 text-slate-400" />
-                <span>Pengguna</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => router.push("/onboarding")}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 font-semibold text-xs transition-colors text-left cursor-pointer"
-              >
-                <Settings className="w-4 h-4 text-slate-400" />
-                <span>Pengaturan Sistem</span>
-              </button>
-            </nav>
-          </div>
-        </div>
-
-        {/* Profil Operator Dishub & Logout */}
-        <div className="pt-4 border-t border-slate-200/80">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-slate-200 border border-slate-300 text-slate-800 font-bold text-xs flex items-center justify-center">
-                BS
-              </div>
-              <div className="truncate max-w-[110px]">
-                <p className="text-xs font-bold text-slate-900 truncate">
-                  Budi Santoso, S.T.
-                </p>
-                <p className="text-[10px] text-slate-400">Admin Dishub</p>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => {
-                toast.success("Berhasil keluar dari sesi Dishub.");
-                router.push("/login");
-              }}
-              title="Keluar"
-              aria-label="Keluar dari sesi"
-              className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      </aside>
+      {/* SIDEBAR MODULAR */}
+      <Sidebar pendingCount={kpiStats.pendingToday} />
 
       {/* =========================================================================
           KONTEN UTAMA: VERIFIKASI PELANGGARAN
           ========================================================================= */}
       <div className="flex-1 flex flex-col h-screen overflow-y-auto">
-        {/* Header App Bar */}
-        <header className="sticky top-0 z-10 bg-white/95 backdrop-blur-xs border-b border-slate-200/90 px-8 py-3.5 flex items-center justify-between">
-          <h1 className="text-xl font-black text-slate-900 tracking-tight">
-            Verifikasi Pelanggaran
-          </h1>
-
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 text-right">
-              <div>
-                <p className="text-xs font-bold text-slate-900">Budi Santoso, S.T.</p>
-                <p className="text-[10px] text-slate-400">Admin</p>
-              </div>
-              <div className="w-8 h-8 rounded-full bg-slate-200 border border-slate-300 text-slate-800 font-bold text-xs flex items-center justify-center">
-                BS
-              </div>
-            </div>
-          </div>
-        </header>
+        {/* NAVBAR MODULAR (Profil & Logout konsisten) */}
+        <Navbar />
 
         {/* WORKSPACE AREA */}
         <main className="p-8 space-y-6 max-w-7xl w-full mx-auto">
+          {/* HEADER HALAMAN (Item 3: Di dalam halaman, konsisten, tanpa emoji) */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2.5">
+                <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">
+                  Verifikasi Pelanggaran
+                </h1>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                  Dishub Bogor
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mt-1">
+                Pemeriksaan bukti insiden ngetem angkutan umum dan validasi nomor polisi secara manual oleh petugas (HITL).
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-slate-600 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-2xs">
+                Mode: Human-in-the-Loop (HITL)
+              </span>
+            </div>
+          </div>
+
           {/* ===================================================================
               BARIS 1: 3 KARTU KPI RINGKASAN
               =================================================================== */}
@@ -472,10 +477,10 @@ export default function VerificationPage() {
               <span className="text-xs font-semibold text-slate-500 block mb-1">
                 Terdeteksi Hari Ini
               </span>
-              <div className="text-4xl font-black text-slate-900 tracking-tight">
+              <div className="text-4xl font-bold text-slate-900 tracking-tight">
                 {kpiStats.totalToday}
               </div>
-              <span className="text-xs font-semibold text-slate-500 mt-1">
+              <span className="text-xs font-medium text-slate-500 mt-1">
                 Kejadian
               </span>
             </div>
@@ -485,10 +490,10 @@ export default function VerificationPage() {
               <span className="text-xs font-semibold text-slate-500 block mb-1">
                 Terdeteksi Hari Ini
               </span>
-              <div className="text-4xl font-black text-amber-500 tracking-tight">
+              <div className="text-4xl font-bold text-amber-500 tracking-tight">
                 {kpiStats.pendingToday}
               </div>
-              <span className="text-xs font-bold text-amber-600 mt-1">
+              <span className="text-xs font-semibold text-amber-600 mt-1">
                 Pending
               </span>
             </div>
@@ -498,10 +503,10 @@ export default function VerificationPage() {
               <span className="text-xs font-semibold text-slate-500 block mb-1">
                 Keyakinan AI
               </span>
-              <div className="text-4xl font-black text-blue-600 tracking-tight">
+              <div className="text-4xl font-bold text-blue-600 tracking-tight">
                 {kpiStats.aiConfidencePercent}%
               </div>
-              <span className="text-xs font-bold text-blue-600 mt-1">
+              <span className="text-xs font-semibold text-blue-600 mt-1">
                 Tinggi
               </span>
             </div>
@@ -520,13 +525,13 @@ export default function VerificationPage() {
                 <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
                   <div className="flex items-center gap-2">
                     <FileText className="w-4 h-4 text-blue-600" />
-                    <h2 className="text-xs font-extrabold uppercase tracking-wider text-slate-900">
-                      ANTREAN VERIFIKASI
+                    <h2 className="text-xs font-semibold text-slate-900">
+                      Antrean Verifikasi
                     </h2>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[11px] text-slate-400">Durasi Terlama</span>
-                    <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-bold">
+                    <span className="text-[11px] text-slate-400 font-medium">Durasi Terlama</span>
+                    <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-semibold">
                       {kpiStats.pendingToday} Pending
                     </span>
                   </div>
@@ -534,7 +539,9 @@ export default function VerificationPage() {
 
                 {/* List Item Antrean */}
                 <div className="space-y-2.5">
-                  {items.map((it) => {
+                  {items
+                    .slice((queuePage - 1) * queuePageSize, queuePage * queuePageSize)
+                    .map((it) => {
                     const isSelected = selectedItem.id === it.id;
                     const isPending = it.status === "Pending";
                     const isValid = it.status === "Valid";
@@ -552,21 +559,21 @@ export default function VerificationPage() {
                       >
                         <div className="flex items-center justify-between mb-1.5">
                           <div className="flex items-center gap-1.5">
-                            <span className="font-bold text-xs text-slate-900">
+                            <span className="font-semibold text-xs text-slate-900">
                               {it.incidentCode}
                             </span>
-                            <span className="text-[10px] font-mono text-slate-600 bg-slate-100 px-1.5 py-0.2 rounded font-semibold">
+                            <span className="text-[10px] font-mono text-slate-600 bg-slate-100 px-1.5 py-0.2 rounded font-medium">
                               {it.trackId}
                             </span>
                           </div>
 
                           {isValid && (
-                            <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold flex items-center gap-1">
+                            <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-semibold flex items-center gap-1">
                               <Check className="w-3 h-3" /> Valid
                             </span>
                           )}
                           {isInvalid && (
-                            <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 text-[10px] font-bold flex items-center gap-1">
+                            <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 text-[10px] font-semibold flex items-center gap-1">
                               <X className="w-3 h-3" /> Invalid
                             </span>
                           )}
@@ -586,14 +593,14 @@ export default function VerificationPage() {
                           {/* Badge Durasi Berhenti */}
                           <div className="flex items-center gap-2">
                             {it.plateNumber && !isValid && !isInvalid && (
-                              <span className="font-bold text-slate-800 text-[11px]">
+                              <span className="font-semibold text-slate-800 text-[11px]">
                                 {it.plateNumber}
                               </span>
                             )}
                             <span
-                              className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 ${
+                              className={`text-[10px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 ${
                                 isPending
-                                  ? "bg-red-50 text-red-600 border border-red-200"
+                                    ? "bg-red-50 text-red-600 border border-red-200"
                                   : "text-slate-500"
                               }`}
                             >
@@ -607,7 +614,7 @@ export default function VerificationPage() {
                         {!isPending && (
                           <div className="mt-2 pt-2 border-t border-slate-100 text-[10px] text-slate-400 flex items-center justify-between">
                             <span>{it.notes}</span>
-                            <span className="font-bold text-slate-700">{it.plateNumber}</span>
+                            <span className="font-semibold text-slate-700">{it.plateNumber}</span>
                           </div>
                         )}
                       </div>
@@ -616,21 +623,27 @@ export default function VerificationPage() {
                 </div>
               </div>
 
-              {/* Pagination Antrean Bawah */}
-              <div className="flex items-center justify-between pt-3 mt-3 border-t border-slate-100 text-xs text-slate-400">
-                <span>Hal. 1 dari 9 (Total 42)</span>
+              {/* Pagination Antrean Bawah (Revisi Item 7) */}
+              <div className="flex items-center justify-between pt-3 mt-3 border-t border-slate-100 text-xs text-slate-500">
+                <span>
+                  Hal. {queuePage} dari {Math.ceil(items.length / queuePageSize) || 1} (Total {items.length})
+                </span>
                 <div className="flex items-center gap-1">
                   <button
                     type="button"
+                    disabled={queuePage <= 1}
+                    onClick={() => setQueuePage((p) => Math.max(1, p - 1))}
                     aria-label="Halaman sebelumnya"
-                    className="p-1 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 cursor-pointer"
+                    className="p-1 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                   >
                     <ChevronLeft className="w-3.5 h-3.5" />
                   </button>
                   <button
                     type="button"
+                    disabled={queuePage >= Math.ceil(items.length / queuePageSize)}
+                    onClick={() => setQueuePage((p) => Math.min(Math.ceil(items.length / queuePageSize), p + 1))}
                     aria-label="Halaman berikutnya"
-                    className="p-1 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 cursor-pointer"
+                    className="p-1 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                   >
                     <ChevronRight className="w-3.5 h-3.5" />
                   </button>
@@ -862,15 +875,15 @@ export default function VerificationPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {/* Kartu Trayek Referensi */}
                     <div>
-                      <label className="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider block mb-1">
-                        TRAYEK (REFERENSI JALUR)
+                      <label className="text-xs font-semibold text-slate-500 block mb-1">
+                        Trayek (Referensi Jalur)
                       </label>
                       <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center gap-3">
-                        <span className="w-8 h-8 rounded-lg bg-blue-600 text-white font-black text-xs flex items-center justify-center shrink-0">
+                        <span className="w-8 h-8 rounded-lg bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
                           {selectedItem.trayekCode}
                         </span>
                         <div>
-                          <p className="text-xs font-bold text-slate-900 leading-tight">
+                          <p className="text-xs font-semibold text-slate-900 leading-tight">
                             {selectedItem.trayekName}
                           </p>
                           <p className="text-[10px] text-slate-400 mt-0.5">
@@ -882,14 +895,14 @@ export default function VerificationPage() {
 
                     {/* Alasan Kejadian Dropdown */}
                     <div>
-                      <label className="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider block mb-1">
-                        ALASAN KEJADIAN
+                      <label className="text-xs font-semibold text-slate-500 block mb-1">
+                        Alasan Kejadian
                       </label>
                       <div className="relative">
                         <select
                           value={reasonForm}
                           onChange={(e) => setReasonForm(e.target.value)}
-                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white appearance-none cursor-pointer pr-8"
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-medium text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-blue-500 bg-white appearance-none cursor-pointer pr-8"
                         >
                           <option value="Ngetem Menghambat Lalu Lintas">
                             Ngetem Menghambat Lalu Lintas
@@ -911,15 +924,15 @@ export default function VerificationPage() {
 
                   {/* Baris 3: Catatan Petugas */}
                   <div>
-                    <label className="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider block mb-1">
-                      CATATAN PETUGAS (OPSIONAL)
+                    <label className="text-xs font-semibold text-slate-500 block mb-1">
+                      Catatan Petugas (Opsional)
                     </label>
                     <textarea
                       rows={2}
                       value={notesForm}
                       onChange={(e) => setNotesForm(e.target.value)}
                       placeholder="Masukkan catatan spesifik operator lapangan..."
-                      className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
 

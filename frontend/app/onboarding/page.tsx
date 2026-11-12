@@ -19,6 +19,7 @@ import {
   ClipboardList,
   ShieldCheck,
   Loader2,
+  ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -199,7 +200,7 @@ export default function OnboardingSetupPage() {
               S
             </div>
           )}
-          <span className="text-2xl font-black tracking-tight text-slate-900">
+          <span className="text-2xl font-bold tracking-tight text-slate-900">
             SILOTER
           </span>
         </div>
@@ -275,7 +276,7 @@ export default function OnboardingSetupPage() {
         {/* Header Judul & Badge CCTV Terkoneksi */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-8 border-b border-slate-100">
           <div>
-            <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
+            <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">
               Inisialisasi Pemantauan Lokasi Baru
             </h1>
             <p className="text-sm text-slate-500 mt-1 max-w-xl leading-relaxed">
@@ -290,10 +291,10 @@ export default function OnboardingSetupPage() {
               <Video className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+              <p className="text-xs font-semibold text-slate-500">
                 CCTV Aktif Terkoneksi
               </p>
-              <p className="text-lg md:text-xl font-extrabold text-blue-700 leading-tight">
+              <p className="text-lg md:text-xl font-bold text-blue-700 leading-tight">
                 {cctvCount} Kamera
               </p>
             </div>
@@ -320,7 +321,8 @@ export default function OnboardingSetupPage() {
             </div>
             <div className="mt-4 pt-2 border-t border-slate-200/40">
               <span className="text-xs font-semibold text-blue-600 inline-flex items-center gap-1.5 hover:underline cursor-pointer">
-                🔗 Integrasi GIS Bogor
+                <ExternalLink className="w-3.5 h-3.5" />
+                Integrasi GIS Bogor
               </span>
             </div>
           </div>

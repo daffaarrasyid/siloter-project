@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { Sidebar } from "@/components/layout/sidebar";
+import { Navbar } from "@/components/layout/navbar";
 import {
   Video,
   ShieldCheck,
@@ -215,9 +217,9 @@ export default function AnalyticsPage() {
     },
   ]);
 
-  // Pagination for table
-  const [currentPage, setCurrentPage] = useState(1);
-  const totalPages = 70; // 348 records / 5 = ~70 pages
+  // Pagination for table (Revisi Item 7)
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(10);
 
   // Modal Detail State
   const [selectedIncident, setSelectedIncident] = useState<RekapItem | null>(null);
@@ -335,159 +337,55 @@ export default function AnalyticsPage() {
 
   return (
     <div className="flex h-screen w-full bg-[#f4f7fc] text-slate-800 font-sans overflow-hidden">
-      {/* =========================================================================
-          SIDEBAR KIRI (NAVIGASI UTAMA DISHUB)
-          ========================================================================= */}
-      <aside className="w-64 bg-white border-r border-slate-200/90 flex flex-col justify-between p-5 select-none shrink-0 z-20 print:hidden">
-        <div>
-          {/* Logo & Brand Header */}
-          <div className="flex items-center gap-2.5 mb-8 px-1">
-            <div className="relative w-7 h-7 flex items-center justify-center">
-              <Image
-                src="/logo.png"
-                alt="Logo SILOTER"
-                width={28}
-                height={28}
-                className="object-contain"
-                priority
-              />
-            </div>
-            <span className="text-xl font-black tracking-tight text-slate-900">
-              SILOTER
-            </span>
-          </div>
-
-          {/* Section: NAVIGASI UTAMA */}
-          <div className="mb-6">
-            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block px-3 mb-2">
-              NAVIGASI UTAMA
-            </span>
-            <nav className="space-y-1">
-              <button
-                type="button"
-                onClick={() => router.push("/dashboard")}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 font-semibold text-xs transition-colors text-left cursor-pointer"
-              >
-                <Video className="w-4 h-4 text-slate-400" />
-                <span>Pantau CCTV</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => router.push("/events")}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 font-semibold text-xs transition-colors text-left cursor-pointer"
-              >
-                <ShieldCheck className="w-4 h-4 text-slate-400" />
-                <span>Verifikasi</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => router.push("/onboarding/step3")}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 font-semibold text-xs transition-colors text-left cursor-pointer"
-              >
-                <Layers className="w-4 h-4 text-slate-400" />
-                <span>Zona &amp; Durasi</span>
-              </button>
-
-              {/* ACTIVE: Analitik & Laporan */}
-              <button
-                type="button"
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-xs shadow-xs text-left cursor-default"
-              >
-                <BarChart3 className="w-4 h-4" />
-                <span>Analitik &amp; Laporan</span>
-              </button>
-            </nav>
-          </div>
-
-          {/* Section: ADMIN */}
-          <div>
-            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block px-3 mb-2">
-              ADMIN
-            </span>
-            <nav className="space-y-1">
-              <button
-                type="button"
-                onClick={() => router.push("/users")}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 font-semibold text-xs transition-colors text-left cursor-pointer"
-              >
-                <Users className="w-4 h-4 text-slate-400" />
-                <span>Pengguna</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => router.push("/onboarding/step4")}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 font-semibold text-xs transition-colors text-left cursor-pointer"
-              >
-                <Settings className="w-4 h-4 text-slate-400" />
-                <span>Pengaturan Sistem</span>
-              </button>
-            </nav>
-          </div>
-        </div>
-
-        {/* Footer Profile Operator */}
-        <div className="pt-4 border-t border-slate-100 flex items-center gap-3 px-1">
-          <div className="w-8 h-8 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-xs ring-2 ring-slate-100">
-            BS
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-bold text-slate-800 truncate leading-none">
-              Budi Santoso, S.T.
-            </p>
-            <p className="text-[10px] text-slate-400 mt-1">Admin Command Center</p>
-          </div>
-        </div>
-      </aside>
+      {/* SIDEBAR MODULAR */}
+      <Sidebar />
 
       {/* =========================================================================
           KONTEN UTAMA: ANALITIK & LAPORAN
           ========================================================================= */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        {/* HEADER ATAS */}
-        <header className="px-8 py-5 bg-white border-b border-slate-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-                Analitik &amp; Laporan
-              </h1>
-            </div>
-            <div className="flex items-center gap-2 mt-1">
-              <p className="text-xs text-slate-500">
-                Laporan agregasi validitas deteksi computer vision &amp; verifikasi petugas Dishub Kota Bogor
-              </p>
-              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                DATA CONTOH
-              </span>
-            </div>
-          </div>
-
-          {/* Action Buttons: Ekspor Excel & Ekspor PDF */}
-          <div className="flex items-center gap-2.5 print:hidden">
-            <button
-              type="button"
-              onClick={handleExportExcel}
-              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold shadow-xs transition-colors cursor-pointer"
-            >
-              <FileSpreadsheet className="w-4 h-4" />
-              <span>Ekspor Excel</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleExportPDF}
-              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-xs transition-colors cursor-pointer"
-            >
-              <FileText className="w-4 h-4" />
-              <span>Ekspor PDF</span>
-            </button>
-          </div>
-        </header>
+        {/* NAVBAR MODULAR (Profil & Logout konsisten) */}
+        <Navbar />
 
         {/* CONTAINER BODY */}
         <div className="p-8 space-y-6 max-w-7xl">
+          {/* HEADER HALAMAN (Item 3: Di dalam halaman, konsisten, tanpa emoji) */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2.5">
+                <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">
+                  Analitik &amp; Laporan
+                </h1>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                  Dishub Bogor
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mt-1">
+                Laporan agregasi validitas deteksi computer vision &amp; verifikasi petugas Dishub Kota Bogor.
+              </p>
+            </div>
+
+            {/* Action Buttons: Ekspor Excel & Ekspor PDF */}
+            <div className="flex items-center gap-2.5 print:hidden">
+              <button
+                type="button"
+                onClick={handleExportExcel}
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+              >
+                <FileSpreadsheet className="w-4 h-4" />
+                <span>Ekspor Excel</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleExportPDF}
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+              >
+                <FileText className="w-4 h-4" />
+                <span>Ekspor PDF</span>
+              </button>
+            </div>
+          </div>
           {/* =====================================================================
               FILTER BAR (MATCHING MOCKUP)
               ===================================================================== */}
@@ -499,9 +397,9 @@ export default function AnalyticsPage() {
                   key={tab}
                   type="button"
                   onClick={() => setPeriodTab(tab)}
-                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                     periodTab === tab
-                      ? "bg-white text-slate-900 shadow-xs"
+                      ? "bg-white text-slate-900 shadow-xs font-bold"
                       : "text-slate-500 hover:text-slate-800"
                   }`}
                 >
@@ -512,10 +410,10 @@ export default function AnalyticsPage() {
 
             {/* Rentang Tanggal */}
             <div className="flex flex-col min-w-[180px]">
-              <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider mb-0.5">
-                RENTANG TANGGAL
+              <span className="text-[10px] font-semibold text-slate-500 mb-0.5">
+                Rentang Tanggal
               </span>
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700">
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700">
                 <Calendar className="w-3.5 h-3.5 text-slate-400" />
                 <span>{dateRange}</span>
               </div>
@@ -523,13 +421,13 @@ export default function AnalyticsPage() {
 
             {/* Lokasi CCTV */}
             <div className="flex flex-col min-w-[200px]">
-              <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider mb-0.5">
-                LOKASI CCTV
+              <span className="text-[10px] font-semibold text-slate-500 mb-0.5">
+                Lokasi CCTV
               </span>
               <select
                 value={selectedCamera}
                 onChange={(e) => setSelectedCamera(e.target.value)}
-                className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
+                className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
               >
                 <option value="Semua CCTV (CAM-01 & CAM-02)">
                   Semua CCTV (CAM-01 &amp; CAM-02)
@@ -545,13 +443,13 @@ export default function AnalyticsPage() {
 
             {/* Trayek */}
             <div className="flex flex-col min-w-[210px]">
-              <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider mb-0.5">
-                TRAYEK
+              <span className="text-[10px] font-semibold text-slate-500 mb-0.5">
+                Trayek
               </span>
               <select
                 value={selectedTrayek}
                 onChange={(e) => setSelectedTrayek(e.target.value)}
-                className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
+                className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
               >
                 <option value="Semua Trayek Aktif (Koridor 01-10)">
                   Semua Trayek Aktif (Koridor 01-10)
@@ -564,8 +462,8 @@ export default function AnalyticsPage() {
 
             {/* Search Plat / ID */}
             <div className="flex flex-col min-w-[160px] flex-1">
-              <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider mb-0.5">
-                CARI PLAT / ID INSIDEN
+              <span className="text-[10px] font-semibold text-slate-500 mb-0.5">
+                Cari Plat / ID Insiden
               </span>
               <div className="relative">
                 <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -573,7 +471,10 @@ export default function AnalyticsPage() {
                   type="text"
                   placeholder="Cari Plat / ID..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setCurrentPage(1);
+                  }}
                   className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20"
                 />
               </div>
@@ -586,30 +487,30 @@ export default function AnalyticsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
             {/* Card 1: Bulan Ini */}
             <div className="bg-[#fef2f2]/60 border border-red-200/80 rounded-2xl p-4 shadow-xs">
-              <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">
-                BULAN INI
+              <span className="text-xs font-semibold text-slate-500 block">
+                Bulan Ini
               </span>
               <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-2xl font-black text-slate-900">
+                <span className="text-2xl font-bold text-slate-900">
                   {kpiData.bulanIni}
                 </span>
-                <span className="text-xs font-bold text-slate-600">Kasus</span>
+                <span className="text-xs font-medium text-slate-600">Kasus</span>
               </div>
-              <p className="text-[10.5px] font-bold text-emerald-600 mt-1 truncate">
+              <p className="text-[10.5px] font-semibold text-emerald-600 mt-1 truncate">
                 {kpiData.bulanIniTrend}
               </p>
             </div>
 
             {/* Card 2: Minggu Ini */}
             <div className="bg-[#fffbeb]/70 border border-amber-200/80 rounded-2xl p-4 shadow-xs">
-              <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">
-                MINGGU INI
+              <span className="text-xs font-semibold text-slate-500 block">
+                Minggu Ini
               </span>
               <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-2xl font-black text-slate-900">
+                <span className="text-2xl font-bold text-slate-900">
                   {kpiData.mingguIni}
                 </span>
-                <span className="text-xs font-bold text-slate-600">Kasus</span>
+                <span className="text-xs font-medium text-slate-600">Kasus</span>
               </div>
               <p className="text-[10.5px] text-slate-500 font-medium mt-1 truncate">
                 {kpiData.mingguIniSub}
@@ -618,23 +519,23 @@ export default function AnalyticsPage() {
 
             {/* Card 3: Titik CCTV Teramai */}
             <div className="bg-[#eff6ff]/70 border border-blue-200/80 rounded-2xl p-4 shadow-xs">
-              <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">
-                TITIK CCTV TERAMAI
+              <span className="text-xs font-semibold text-slate-500 block">
+                Titik CCTV Teramai
               </span>
-              <span className="text-lg font-black text-slate-900 mt-1 block truncate">
+              <span className="text-lg font-bold text-slate-900 mt-1 block truncate">
                 {kpiData.titikTeramai}
               </span>
-              <p className="text-[10.5px] text-blue-600 font-bold mt-1 truncate">
+              <p className="text-[10.5px] text-blue-600 font-semibold mt-1 truncate">
                 {kpiData.titikTeramaiSub}
               </p>
             </div>
 
             {/* Card 4: Jam Puncak Paling Rawan */}
             <div className="bg-[#f0fdf4]/70 border border-emerald-200/80 rounded-2xl p-4 shadow-xs">
-              <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">
-                JAM PUNCAK PALING RAWAN
+              <span className="text-xs font-semibold text-slate-500 block">
+                Jam Puncak Paling Rawan
               </span>
-              <span className="text-lg font-black text-slate-900 mt-1 block truncate">
+              <span className="text-lg font-bold text-slate-900 mt-1 block truncate">
                 {kpiData.jamPuncak}
               </span>
               <p className="text-[10.5px] text-slate-500 font-medium mt-1 truncate">
@@ -644,13 +545,13 @@ export default function AnalyticsPage() {
 
             {/* Card 5: Rata-Rata Durasi Ngetem */}
             <div className="bg-slate-50 border border-slate-200/90 rounded-2xl p-4 shadow-xs">
-              <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">
-                RATA-RATA DURASI NGETEM
+              <span className="text-xs font-semibold text-slate-500 block">
+                Rata-Rata Durasi
               </span>
-              <span className="text-lg font-black text-slate-900 mt-1 block truncate">
+              <span className="text-lg font-bold text-slate-900 mt-1 block truncate">
                 {kpiData.rataRataDurasi}
               </span>
-              <p className="text-[10.5px] text-red-600 font-bold mt-1 truncate">
+              <p className="text-[10.5px] text-red-600 font-semibold mt-1 truncate">
                 {kpiData.rataRataDurasiSub}
               </p>
             </div>
@@ -940,41 +841,43 @@ export default function AnalyticsPage() {
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+              <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50/60 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
-                    <th className="py-3 px-4 text-center">NO</th>
-                    <th className="py-3 px-4">ID INSIDEN</th>
-                    <th className="py-3 px-4">PLAT NOMOR</th>
-                    <th className="py-3 px-4">TRAYEK</th>
-                    <th className="py-3 px-4">LOKASI / KAMERA</th>
-                    <th className="py-3 px-4">WAKTU (WIB)</th>
-                    <th className="py-3 px-4">DURASI (DTK)</th>
-                    <th className="py-3 px-4">PETUGAS / DIVERIFIKASI</th>
-                    <th className="py-3 px-4 text-center">STATUS</th>
-                    <th className="py-3 px-4 text-center">AKSI</th>
+                  <tr className="border-b border-slate-100 bg-slate-50/70 text-xs font-semibold text-slate-600">
+                    <th className="py-3 px-4 text-center">No</th>
+                    <th className="py-3 px-4">ID Insiden</th>
+                    <th className="py-3 px-4">Nomor Polisi</th>
+                    <th className="py-3 px-4">Trayek</th>
+                    <th className="py-3 px-4">Lokasi CCTV</th>
+                    <th className="py-3 px-4">Waktu (WIB)</th>
+                    <th className="py-3 px-4">Durasi</th>
+                    <th className="py-3 px-4">Petugas Verifikator</th>
+                    <th className="py-3 px-4 text-center">Status</th>
+                    <th className="py-3 px-4 text-center">Aksi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-xs">
-                  {filteredRows.map((row) => (
+                  {filteredRows
+                    .slice((currentPage - 1) * pageSize, currentPage * pageSize)
+                    .map((row, idx) => (
                     <tr
                       key={row.incident_id}
                       onClick={() => setSelectedIncident(row)}
                       className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
                     >
                       {/* NO */}
-                      <td className="py-3.5 px-4 text-center font-bold text-slate-400">
-                        {row.no}
+                      <td className="py-3.5 px-4 text-center font-medium text-slate-400">
+                        {(currentPage - 1) * pageSize + idx + 1}
                       </td>
 
                       {/* ID INSIDEN */}
-                      <td className="py-3.5 px-4 font-mono font-bold text-slate-800">
+                      <td className="py-3.5 px-4 font-mono font-semibold text-slate-800">
                         {row.incident_id}
                       </td>
 
                       {/* PLAT NOMOR */}
                       <td className="py-3.5 px-4">
-                        <span className="inline-block px-2.5 py-1 rounded-md bg-slate-100 font-mono font-extrabold text-slate-900 tracking-wide text-xs border border-slate-200">
+                        <span className="inline-block px-2.5 py-1 rounded-md bg-slate-100 font-mono font-semibold text-slate-900 tracking-wide text-xs border border-slate-200">
                           {row.plate_number}
                         </span>
                       </td>
@@ -987,7 +890,7 @@ export default function AnalyticsPage() {
                             style={{ backgroundColor: row.trayek_color }}
                           />
                           <div>
-                            <p className="font-bold text-slate-800 leading-tight">
+                            <p className="font-semibold text-slate-800 leading-tight">
                               {row.trayek_name}
                             </p>
                             <p className="text-[11px] text-slate-400">
@@ -1026,7 +929,7 @@ export default function AnalyticsPage() {
 
                       {/* STATUS */}
                       <td className="py-3.5 px-4 text-center">
-                        <span className="inline-flex px-2 py-0.5 rounded text-[10.5px] font-bold bg-red-50 text-red-600 border border-red-200">
+                        <span className="inline-flex px-2 py-0.5 rounded text-[10.5px] font-semibold bg-red-50 text-red-600 border border-red-200">
                           {row.status}
                         </span>
                       </td>
@@ -1039,7 +942,7 @@ export default function AnalyticsPage() {
                             e.stopPropagation();
                             setSelectedIncident(row);
                           }}
-                          className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
                           title="Lihat Detail Bukti"
                         >
                           <Eye className="w-4 h-4" />
@@ -1047,59 +950,101 @@ export default function AnalyticsPage() {
                       </td>
                     </tr>
                   ))}
+                  {filteredRows.length === 0 && (
+                    <tr>
+                      <td colSpan={10} className="py-8 text-center text-slate-400 text-xs">
+                        Tidak ada rekaman pelanggaran yang cocok dengan filter.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
 
-            {/* Pagination matching mockup */}
+            {/* Paginasi Tabel Terintegrasi (Revisi Item 7) */}
             <div className="py-4 px-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
-              <p>
-                Menampilkan <span className="font-bold text-slate-800">1–5</span> dari{" "}
-                <span className="font-bold text-slate-800">348</span> rekaman terverifikasi
-              </p>
+              <div className="flex items-center gap-4">
+                <p>
+                  Menampilkan{" "}
+                  <span className="font-semibold text-slate-800">
+                    {filteredRows.length === 0
+                      ? 0
+                      : (currentPage - 1) * pageSize + 1}{" "}
+                    –{" "}
+                    {Math.min(currentPage * pageSize, filteredRows.length)}
+                  </span>{" "}
+                  dari{" "}
+                  <span className="font-semibold text-slate-800">
+                    {filteredRows.length}
+                  </span>{" "}
+                  rekaman terverifikasi
+                </p>
+
+                <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                  <span>Tampilkan:</span>
+                  <select
+                    value={pageSize}
+                    onChange={(e) => {
+                      setPageSize(Number(e.target.value));
+                      setCurrentPage(1);
+                    }}
+                    className="bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 rounded-lg px-2 py-1 focus:outline-hidden cursor-pointer"
+                  >
+                    <option value={5}>5</option>
+                    <option value={10}>10</option>
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                  </select>
+                  <span>per halaman</span>
+                </div>
+              </div>
 
               <div className="flex items-center gap-1.5">
                 <button
                   type="button"
-                  disabled={currentPage === 1}
+                  disabled={currentPage <= 1}
                   onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                  className="px-2.5 py-1 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40"
+                  className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
                 >
-                  &lt;
+                  Sebelumnya
                 </button>
+
+                {Array.from({
+                  length: Math.ceil(filteredRows.length / pageSize) || 1,
+                })
+                  .slice(0, 5)
+                  .map((_, idx) => {
+                    const pageNum = idx + 1;
+                    return (
+                      <button
+                        key={pageNum}
+                        type="button"
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`w-7 h-7 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                          currentPage === pageNum
+                            ? "bg-blue-600 text-white shadow-xs"
+                            : "text-slate-600 hover:bg-slate-100 border border-slate-200"
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
 
                 <button
                   type="button"
-                  className="w-7 h-7 rounded-lg text-xs font-bold bg-blue-600 text-white shadow-xs"
+                  disabled={
+                    currentPage >=
+                    (Math.ceil(filteredRows.length / pageSize) || 1)
+                  }
+                  onClick={() =>
+                    setCurrentPage((p) =>
+                      Math.min(Math.ceil(filteredRows.length / pageSize) || 1, p + 1)
+                    )
+                  }
+                  className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
                 >
-                  1
-                </button>
-                <button
-                  type="button"
-                  className="w-7 h-7 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100"
-                >
-                  2
-                </button>
-                <button
-                  type="button"
-                  className="w-7 h-7 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100"
-                >
-                  3
-                </button>
-                <span className="text-slate-400 px-1">...</span>
-                <button
-                  type="button"
-                  className="w-7 h-7 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100"
-                >
-                  {totalPages}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-                  className="px-2.5 py-1 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50"
-                >
-                  &gt;
+                  Selanjutnya
                 </button>
               </div>
             </div>

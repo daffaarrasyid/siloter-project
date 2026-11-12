@@ -47,10 +47,19 @@ export default function LoginPage() {
           (cleanUser === "admin" && password === "Password123!") ||
           (cleanUser === "operator" && password === "Password123!")
         ) {
-          toast.success(`Selamat datang, ${cleanUser === "admin" ? "Administrator" : "Operator"} (Mode Siap-Pakai)`);
+          const isAdmin = cleanUser === "admin";
+          const authUser = {
+            name: isAdmin ? "Administrator Dishub Kota Bogor" : "Petugas Operator TMC Dishub",
+            role: isAdmin ? "Admin Command Center • Dishub" : "Operator TMC • Dishub",
+            initials: isAdmin ? "AD" : "PO",
+            email: `${cleanUser}@siloter.bogor.go.id`,
+          };
+          localStorage.setItem("siloter_auth_user", JSON.stringify(authUser));
+
+          toast.success(`Selamat datang, ${isAdmin ? "Administrator" : "Operator"} (Mode Siap-Pakai)`);
           setTimeout(() => {
-            router.push("/onboarding");
-          }, 800);
+            router.push("/dashboard");
+          }, 600);
           return;
         }
 
@@ -61,9 +70,19 @@ export default function LoginPage() {
       }
 
       if (data?.user) {
-        toast.success("Berhasil masuk. Mengalihkan ke persiapan pos...");
+        const email = data.user.email || "";
+        const isAdmin = email.includes("admin") || !email.includes("operator");
+        const authUser = {
+          name: isAdmin ? "Administrator Dishub Kota Bogor" : "Petugas Operator TMC Dishub",
+          role: isAdmin ? "Admin Command Center • Dishub" : "Operator TMC • Dishub",
+          initials: isAdmin ? "AD" : "PO",
+          email: email,
+        };
+        localStorage.setItem("siloter_auth_user", JSON.stringify(authUser));
+
+        toast.success("Berhasil masuk. Mengalihkan ke Command Center...");
         setTimeout(() => {
-          router.push("/onboarding");
+          router.push("/dashboard");
         }, 600);
       }
     } catch (err: any) {
@@ -74,10 +93,18 @@ export default function LoginPage() {
         (cleanUser === "admin" && password === "Password123!") ||
         (cleanUser === "operator" && password === "Password123!")
       ) {
+        const isAdmin = cleanUser === "admin";
+        const authUser = {
+          name: isAdmin ? "Administrator Dishub Kota Bogor" : "Petugas Operator TMC Dishub",
+          role: isAdmin ? "Admin Command Center • Dishub" : "Operator TMC • Dishub",
+          initials: isAdmin ? "AD" : "PO",
+          email: `${cleanUser}@siloter.bogor.go.id`,
+        };
+        localStorage.setItem("siloter_auth_user", JSON.stringify(authUser));
         toast.success(`Selamat datang, ${cleanUser.toUpperCase()}`);
         setTimeout(() => {
-          router.push("/onboarding");
-        }, 800);
+          router.push("/dashboard");
+        }, 600);
         return;
       }
       toast.error("Terjadi kendala saat menghubungkan ke server.");
@@ -136,7 +163,7 @@ export default function LoginPage() {
               S
             </div>
           )}
-          <span className="text-2xl font-black tracking-tight text-slate-900">
+          <span className="text-2xl font-bold tracking-tight text-slate-900">
             SILOTER
           </span>
         </div>

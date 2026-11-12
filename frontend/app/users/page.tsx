@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { Sidebar } from "@/components/layout/sidebar";
+import { Navbar } from "@/components/layout/navbar";
 import {
   Video,
   ShieldCheck,
@@ -245,12 +247,12 @@ export default function UsersPage() {
     },
   ]);
 
-  // Filters & Pagination
+  // Filters & Pagination (Revisi Item 7)
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRole, setSelectedRole] = useState("Semua Peran");
   const [selectedStatus, setSelectedStatus] = useState("Semua Status");
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 5;
+  const [pageSize, setPageSize] = useState<number>(10);
 
   // Modals state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -595,157 +597,54 @@ export default function UsersPage() {
 
   return (
     <div className="flex h-screen w-full bg-[#f4f7fc] text-slate-800 font-sans overflow-hidden">
-      {/* =========================================================================
-          SIDEBAR KIRI (NAVIGASI UTAMA DISHUB)
-          ========================================================================= */}
-      <aside className="w-64 bg-white border-r border-slate-200/90 flex flex-col justify-between p-5 select-none shrink-0 z-20">
-        <div>
-          {/* Logo & Brand Header */}
-          <div className="flex items-center gap-2.5 mb-8 px-1">
-            <div className="relative w-7 h-7 flex items-center justify-center">
-              <Image
-                src="/logo.png"
-                alt="Logo SILOTER"
-                width={28}
-                height={28}
-                className="object-contain"
-                priority
-              />
-            </div>
-            <span className="text-xl font-black tracking-tight text-slate-900">
-              SILOTER
-            </span>
-          </div>
-
-          {/* Section: NAVIGASI UTAMA */}
-          <div className="mb-6">
-            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block px-3 mb-2">
-              NAVIGASI UTAMA
-            </span>
-            <nav className="space-y-1">
-              <button
-                type="button"
-                onClick={() => router.push("/dashboard")}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 font-semibold text-xs transition-colors text-left cursor-pointer"
-              >
-                <Video className="w-4 h-4 text-slate-400" />
-                <span>Pantau CCTV</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => router.push("/events")}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 font-semibold text-xs transition-colors text-left cursor-pointer"
-              >
-                <ShieldCheck className="w-4 h-4 text-slate-400" />
-                <span>Verifikasi</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => router.push("/onboarding/step3")}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 font-semibold text-xs transition-colors text-left cursor-pointer"
-              >
-                <Layers className="w-4 h-4 text-slate-400" />
-                <span>Zona &amp; Durasi</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => router.push("/analytics")}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 font-semibold text-xs transition-colors text-left cursor-pointer"
-              >
-                <BarChart3 className="w-4 h-4 text-slate-400" />
-                <span>Analitik &amp; Laporan</span>
-              </button>
-            </nav>
-          </div>
-
-          {/* Section: ADMIN */}
-          <div>
-            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block px-3 mb-2">
-              ADMIN
-            </span>
-            <nav className="space-y-1">
-              {/* Active Menu: Pengguna */}
-              <button
-                type="button"
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-xs shadow-xs text-left cursor-default"
-              >
-                <Users className="w-4 h-4" />
-                <span>Pengguna</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => router.push("/onboarding/step4")}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 font-semibold text-xs transition-colors text-left cursor-pointer"
-              >
-                <Settings className="w-4 h-4 text-slate-400" />
-                <span>Pengaturan Sistem</span>
-              </button>
-            </nav>
-          </div>
-        </div>
-
-        {/* Footer Profile Operator */}
-        <div className="pt-4 border-t border-slate-100 flex items-center gap-3 px-1">
-          <div className="w-8 h-8 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-xs ring-2 ring-slate-100">
-            BS
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-bold text-slate-800 truncate leading-none">
-              Budi Santoso, S.T.
-            </p>
-            <p className="text-[10px] text-slate-400 mt-1">Admin Command Center</p>
-          </div>
-        </div>
-      </aside>
+      {/* SIDEBAR MODULAR */}
+      <Sidebar />
 
       {/* =========================================================================
           KONTEN UTAMA: MANAJEMEN PENGGUNA
           ========================================================================= */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        {/* TOP BAR / HEADER */}
-        <header className="px-8 py-6 bg-white border-b border-slate-200/90 flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0">
-          <div>
-            <div className="flex items-center gap-2.5">
-              <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-                Manajemen Pengguna
-              </h1>
-              <span className="px-2 py-0.5 rounded text-[11px] font-extrabold bg-blue-50 text-blue-700 border border-blue-200">
-                DISHUB BOGOR
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 mt-1 max-w-2xl">
-              Kelola akun akses staf Dishub Kota Bogor, operator lapangan, dan
-              pembagian wewenang sistem pemantauan SILOTER.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={handleExportData}
-              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold shadow-xs transition-colors cursor-pointer"
-            >
-              <Download className="w-4 h-4 text-slate-500" />
-              <span>Ekspor Data</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleOpenAdd}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs transition-colors cursor-pointer"
-            >
-              <UserPlus className="w-4 h-4" />
-              <span>Tambah Pengguna</span>
-            </button>
-          </div>
-        </header>
+        {/* NAVBAR MODULAR (Profil & Logout konsisten) */}
+        <Navbar />
 
         {/* CONTAINER BODY */}
         <div className="p-8 space-y-6 max-w-7xl">
+          {/* HEADER HALAMAN (Item 3: Di dalam halaman, konsisten, tanpa emoji) */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2.5">
+                <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">
+                  Manajemen Pengguna
+                </h1>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                  Dishub Bogor
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mt-1 max-w-2xl">
+                Kelola akun akses staf Dishub Kota Bogor, operator lapangan, dan pembagian wewenang sistem pemantauan SILOTER.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={handleExportData}
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+              >
+                <Download className="w-4 h-4 text-slate-500" />
+                <span>Ekspor Data</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleOpenAdd}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+              >
+                <UserPlus className="w-4 h-4" />
+                <span>Tambah Pengguna</span>
+              </button>
+            </div>
+          </div>
           {/* =====================================================================
               4 KPI STATS CARDS (MATCHING MOCKUP)
               ===================================================================== */}
@@ -753,10 +652,10 @@ export default function UsersPage() {
             {/* Card 1: Total Personel */}
             <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs flex items-center justify-between">
               <div>
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-                  TOTAL PERSONEL
+                <span className="text-xs font-semibold text-slate-500 block">
+                  Total Personel
                 </span>
-                <span className="text-3xl font-black text-slate-900 mt-1 block">
+                <span className="text-3xl font-bold text-slate-900 mt-1 block">
                   {stats.totalPersonnel}
                 </span>
                 <span className="text-[11px] text-slate-400 font-medium mt-1 block">
@@ -771,14 +670,14 @@ export default function UsersPage() {
             {/* Card 2: Petugas Lapangan */}
             <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs flex items-center justify-between">
               <div>
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-                  PETUGAS LAPANGAN
+                <span className="text-xs font-semibold text-slate-500 block">
+                  Petugas Lapangan
                 </span>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className="text-3xl font-black text-slate-900">
+                  <span className="text-3xl font-bold text-slate-900">
                     {stats.fieldOfficers}
                   </span>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-100">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-600 border border-blue-100">
                     Online
                   </span>
                 </div>
@@ -794,10 +693,10 @@ export default function UsersPage() {
             {/* Card 3: Admin Sistem */}
             <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs flex items-center justify-between">
               <div>
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-                  ADMIN SISTEM
+                <span className="text-xs font-semibold text-slate-500 block">
+                  Admin Sistem
                 </span>
-                <span className="text-3xl font-black text-slate-900 mt-1 block">
+                <span className="text-3xl font-bold text-slate-900 mt-1 block">
                   {stats.admins}
                 </span>
                 <span className="text-[11px] text-slate-400 font-medium mt-1 block">
@@ -812,10 +711,10 @@ export default function UsersPage() {
             {/* Card 4: Verifikator Ngetem */}
             <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs flex items-center justify-between">
               <div>
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-                  VERIFIKATOR NGETEM
+                <span className="text-xs font-semibold text-slate-500 block">
+                  Verifikator Ngetem
                 </span>
-                <span className="text-3xl font-black text-slate-900 mt-1 block">
+                <span className="text-3xl font-bold text-slate-900 mt-1 block">
                   {stats.verifiers}
                 </span>
                 <span className="text-[11px] text-slate-400 font-medium mt-1 block">
@@ -912,15 +811,15 @@ export default function UsersPage() {
               ===================================================================== */}
           <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+              <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50/60 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
-                    <th className="py-3.5 px-6">NAMA PEGAWAI &amp; NIP</th>
-                    <th className="py-3.5 px-6">PERAN &amp; HAK AKSES</th>
-                    <th className="py-3.5 px-6">PENEMPATAN / TITIK PANTAU</th>
-                    <th className="py-3.5 px-6">STATUS</th>
-                    <th className="py-3.5 px-6">AKTIVITAS TERAKHIR</th>
-                    <th className="py-3.5 px-6 text-right">TINDAKAN</th>
+                  <tr className="border-b border-slate-100 bg-slate-50/70 text-xs font-semibold text-slate-600">
+                    <th className="py-3.5 px-6">Nama Pegawai &amp; NIP</th>
+                    <th className="py-3.5 px-6">Peran &amp; Hak Akses</th>
+                    <th className="py-3.5 px-6">Penempatan / Titik Pantau</th>
+                    <th className="py-3.5 px-6">Status</th>
+                    <th className="py-3.5 px-6">Aktivitas Terakhir</th>
+                    <th className="py-3.5 px-6 text-right">Tindakan</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-xs">
@@ -1043,27 +942,47 @@ export default function UsersPage() {
               </table>
             </div>
 
-            {/* Pagination Footer */}
+            {/* Pagination Footer (Revisi Item 7) */}
             <div className="py-4 px-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
-              <p>
-                Menampilkan{" "}
-                <span className="font-bold text-slate-800">
-                  {filteredPersonnel.length === 0 ? 0 : startIndex + 1} –{" "}
-                  {Math.min(startIndex + pageSize, filteredPersonnel.length)}
-                </span>{" "}
-                dari{" "}
-                <span className="font-bold text-slate-800">
-                  {filteredPersonnel.length}
-                </span>{" "}
-                personel terdaftar
-              </p>
+              <div className="flex items-center gap-4">
+                <p>
+                  Menampilkan{" "}
+                  <span className="font-semibold text-slate-800">
+                    {filteredPersonnel.length === 0 ? 0 : startIndex + 1} –{" "}
+                    {Math.min(startIndex + pageSize, filteredPersonnel.length)}
+                  </span>{" "}
+                  dari{" "}
+                  <span className="font-semibold text-slate-800">
+                    {filteredPersonnel.length}
+                  </span>{" "}
+                  personel terdaftar
+                </p>
+
+                <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                  <span>Tampilkan:</span>
+                  <select
+                    value={pageSize}
+                    onChange={(e) => {
+                      setPageSize(Number(e.target.value));
+                      setCurrentPage(1);
+                    }}
+                    className="bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 rounded-lg px-2 py-1 focus:outline-hidden cursor-pointer"
+                  >
+                    <option value={5}>5</option>
+                    <option value={10}>10</option>
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                  </select>
+                  <span>per halaman</span>
+                </div>
+              </div>
 
               <div className="flex items-center gap-1.5">
                 <button
                   type="button"
-                  disabled={currentPage === 1}
+                  disabled={currentPage <= 1}
                   onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                  className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
                 >
                   Sebelumnya
                 </button>
@@ -1075,10 +994,10 @@ export default function UsersPage() {
                       key={pageNum}
                       type="button"
                       onClick={() => setCurrentPage(pageNum)}
-                      className={`w-8 h-8 rounded-lg text-xs font-bold transition-colors ${
+                      className={`w-7 h-7 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                         currentPage === pageNum
                           ? "bg-blue-600 text-white shadow-xs"
-                          : "text-slate-600 hover:bg-slate-100 border border-transparent"
+                          : "text-slate-600 hover:bg-slate-100 border border-slate-200"
                       }`}
                     >
                       {pageNum}
@@ -1088,11 +1007,11 @@ export default function UsersPage() {
 
                 <button
                   type="button"
-                  disabled={currentPage === totalPages || totalPages === 0}
+                  disabled={currentPage >= totalPages || totalPages === 0}
                   onClick={() =>
                     setCurrentPage((p) => Math.min(p + 1, totalPages))
                   }
-                  className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
                 >
                   Selanjutnya
                 </button>

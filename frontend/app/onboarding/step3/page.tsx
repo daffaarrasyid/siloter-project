@@ -47,6 +47,8 @@ export default function OnboardingStep3Page() {
   const [logoError, setLogoError] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
   // Canvas ref & Titik Poligon ROI (dalam piksel canvas 640x360)
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -455,7 +457,7 @@ export default function OnboardingStep3Page() {
               <div className="absolute inset-0 bg-[#0f172a] flex items-center justify-center">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={`http://localhost:8000/api/stream/${selectedCameraCode}`}
+                  src={`${apiUrl}/api/stream/${selectedCameraCode}`}
                   alt="Feed CCTV Empang BTM"
                   className="w-full h-full object-cover opacity-90"
                   onError={(e) => {

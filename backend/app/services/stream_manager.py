@@ -295,29 +295,58 @@ class CameraStreamWorker:
 
     def _run_hls_capture_loop(self, cap: cv2.VideoCapture) -> bool:
         """
-        Extracts exactly 1 frame per 1.0 second from the live HLS stream.
-        Enforces strict frame throttling to protect BSW server bandwidth (FR-02, NFR-04).
+        Extracts the latest live frame at 1 FPS from the live HLS stream.
+        Uses a dedicated drain reader thread so OpenCV never accumulates buffered
+        frames, ensuring the on-screen CCTV clock seconds advance in real-time
+        without freezing or experiencing 25-second buffer lag.
         Returns True if stopped cleanly, False if stream died unexpectedly.
         """
-        while not self._stop_event.is_set():
-            cycle_start = time.time()
+        latest_raw: Dict[str, Any] = {"frame": None, "read_ok": True}
+        reader_stop = threading.Event()
 
-            ret, frame = cap.read()
-            if not ret or frame is None:
-                logger.warning(f"[{self.camera_code}] HLS read returned empty frame. Stream dropped.")
-                return False
+        def _hls_drain_reader():
+            while not reader_stop.is_set() and not self._stop_event.is_set():
+                ret, frame = cap.read()
+                if not ret or frame is None:
+                    latest_raw["read_ok"] = False
+                    break
+                latest_raw["frame"] = frame
+                # Yield brief time slice to avoid CPU starvation
+                time.sleep(0.015)
 
-            self._update_dimensions(frame)
-            self._store_frame(frame)
+        reader_t = threading.Thread(target=_hls_drain_reader, name=f"Drain-{self.camera_code}", daemon=True)
+        reader_t.start()
 
-            # Strict 1 FPS throttling: compute elapsed time and sleep for remaining fraction of 1.0s
-            elapsed = time.time() - cycle_start
-            sleep_duration = max(0.0, self.target_interval - elapsed)
+        # Wait briefly for first live frame
+        for _ in range(40):
+            if latest_raw["frame"] is not None or not latest_raw["read_ok"]:
+                break
+            time.sleep(0.05)
 
-            if self._interruptible_sleep(sleep_duration):
-                return True
+        try:
+            while not self._stop_event.is_set():
+                cycle_start = time.time()
 
-        return True
+                if not latest_raw["read_ok"] or latest_raw["frame"] is None:
+                    logger.warning(f"[{self.camera_code}] HLS read returned empty frame. Stream dropped.")
+                    return False
+
+                frame = latest_raw["frame"].copy()
+
+                self._update_dimensions(frame)
+                self._store_frame(frame)
+
+                # Strict 1 FPS throttling: compute elapsed time and sleep for remaining fraction of 1.0s
+                elapsed = time.time() - cycle_start
+                sleep_duration = max(0.0, self.target_interval - elapsed)
+
+                if self._interruptible_sleep(sleep_duration):
+                    return True
+
+            return True
+        finally:
+            reader_stop.set()
+            reader_t.join(timeout=1.0)
 
     def _run_fallback_loop(self, cap: cv2.VideoCapture, video_path: str) -> None:
         """
@@ -549,6 +578,29 @@ class StreamManager:
                 "threshold": 60,
             },
         ]
+
+        # Probe Supabase for runtime dynamic camera configs and fresh stream URLs
+        try:
+            from app.core.supabase_client import get_supabase_client
+            supabase = get_supabase_client()
+            if supabase:
+                res = supabase.table("camera_configs").select("*").execute()
+                if res.data:
+                    db_map = {r["camera_code"].lower(): r for r in res.data}
+                    for cam in camera_definitions:
+                        code = cam["code"].lower()
+                        if code in db_map:
+                            db_cam = db_map[code]
+                            if db_cam.get("stream_url"):
+                                cam["stream_url"] = db_cam["stream_url"].strip()
+                            if db_cam.get("camera_name"):
+                                cam["name"] = db_cam["camera_name"].strip()
+                            if db_cam.get("threshold_seconds"):
+                                cam["threshold"] = db_cam["threshold_seconds"]
+                            if db_cam.get("roi_polygon") and len(db_cam["roi_polygon"]) >= 3:
+                                cam["roi"] = db_cam["roi_polygon"]
+        except Exception as e:
+            logger.warning(f"Could not query dynamic camera configs from Supabase at startup: {e}")
 
         for cam in camera_definitions:
             worker = CameraStreamWorker(

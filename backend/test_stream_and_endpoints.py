@@ -24,7 +24,10 @@ def test_camera_worker_fallback_and_throttling():
     )
 
     worker.start()
-    time.sleep(1.5)
+    for _ in range(60):
+        if worker.get_latest_frame()[0] is not None:
+            break
+        time.sleep(0.25)
 
     frame, ts, status = worker.get_latest_frame()
     info = worker.get_info()

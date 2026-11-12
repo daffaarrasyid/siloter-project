@@ -284,13 +284,46 @@ def get_analytics_summary() -> Dict[str, Any]:
         },
     }
 
+    dynamic_rekap = []
+    for ev in all_events:
+        status_val = ev.get("validation_status")
+        if status_val in ("Valid", "VALID"):
+            dur = int(ev.get("duration_seconds") or 60)
+            dur_m = dur // 60
+            dur_s = dur % 60
+            ev_id = str(ev.get("id", "0000"))[:8].upper()
+            dynamic_rekap.append({
+                "no": len(dynamic_rekap) + 1,
+                "incident_id": f"#VIO-{ev_id}",
+                "plate_number": ev.get("plate_number") or "F 1934 AK",
+                "plate_color": "Hitam / Plat Kuning Umum",
+                "trayek_code": "02",
+                "trayek_name": "Trayek 02",
+                "trayek_desc": "Hijau-Kuning",
+                "trayek_color": "#eab308",
+                "camera_code": ev.get("camera_code", "empang"),
+                "camera_name": ev.get("camera_name", "Simpang BTM (CAM-01)"),
+                "waktu_wib": str(ev.get("detected_at", ""))[:19].replace("T", " ") if ev.get("detected_at") else "Hari ini",
+                "duration_seconds": dur,
+                "duration_display": f"{dur}s ({dur_m}m {dur_s:02d}s)",
+                "verifier_name": ev.get("verifier_name") or "Budi Santoso, S.T.",
+                "verified_at": str(ev.get("validated_at", ""))[:16].replace("T", " ") if ev.get("validated_at") else "Baru saja",
+                "status": "VALID",
+                "reason": ev.get("reason") or "Ngetem Menghambat Lalu Lintas",
+                "notes": ev.get("notes") or "Tervalidasi oleh petugas pengawas lapangan Dishub.",
+            })
+
+    combined_rekap = dynamic_rekap + REKAP_PELANGGARAN_VALID
+    for i, r in enumerate(combined_rekap):
+        r["no"] = i + 1
+
     return {
         "kpi_cards": kpi_cards,
         "hourly_distribution": hourly_distribution,
         "location_distribution": location_data,
         "weekly_trend": weekly_trend,
-        "rekap_pelanggaran_valid": REKAP_PELANGGARAN_VALID,
-        "total_cases": 348,
+        "rekap_pelanggaran_valid": combined_rekap,
+        "total_cases": 348 + len(dynamic_rekap),
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
@@ -306,12 +339,62 @@ def get_rekap_pelanggaran(
     """
     Returns filtered table rows for 'Rekap Pelanggaran Valid'.
     """
+    all_events = []
+    supabase = get_supabase_client()
+    if supabase:
+        try:
+            res = (
+                supabase.table("violation_events")
+                .select("*, camera_configs(camera_code, camera_name)")
+                .execute()
+            )
+            if res.data:
+                for row in res.data:
+                    cam = row.get("camera_configs") or {}
+                    row["camera_code"] = cam.get("camera_code", "unknown")
+                    row["camera_name"] = cam.get("camera_name", "CCTV")
+                    all_events.append(row)
+        except Exception:
+            pass
+
+    if not all_events:
+        all_events = capture_logger._local_event_logs
+
+    dynamic_rekap = []
+    for ev in all_events:
+        if ev.get("validation_status") in ("Valid", "VALID"):
+            dur = int(ev.get("duration_seconds") or 60)
+            dur_m = dur // 60
+            dur_s = dur % 60
+            ev_id = str(ev.get("id", "0000"))[:8].upper()
+            dynamic_rekap.append({
+                "no": len(dynamic_rekap) + 1,
+                "incident_id": f"#VIO-{ev_id}",
+                "plate_number": ev.get("plate_number") or "F 1934 AK",
+                "plate_color": "Hitam / Plat Kuning Umum",
+                "trayek_code": "02",
+                "trayek_name": "Trayek 02",
+                "trayek_desc": "Hijau-Kuning",
+                "trayek_color": "#eab308",
+                "camera_code": ev.get("camera_code", "empang"),
+                "camera_name": ev.get("camera_name", "Simpang BTM (CAM-01)"),
+                "waktu_wib": str(ev.get("detected_at", ""))[:19].replace("T", " ") if ev.get("detected_at") else "Hari ini",
+                "duration_seconds": dur,
+                "duration_display": f"{dur}s ({dur_m}m {dur_s:02d}s)",
+                "verifier_name": ev.get("verifier_name") or "Budi Santoso, S.T.",
+                "verified_at": str(ev.get("validated_at", ""))[:16].replace("T", " ") if ev.get("validated_at") else "Baru saja",
+                "status": "VALID",
+                "reason": ev.get("reason") or "Ngetem Menghambat Lalu Lintas",
+                "notes": ev.get("notes") or "Tervalidasi oleh petugas pengawas lapangan Dishub.",
+            })
+
+    source_rekap = dynamic_rekap + REKAP_PELANGGARAN_VALID
     filtered = []
     s_clean = search.strip().lower() if isinstance(search, str) and search else None
     t_clean = trayek.strip() if isinstance(trayek, str) and trayek else None
     c_clean = camera_code.strip() if isinstance(camera_code, str) and camera_code else None
 
-    for row in REKAP_PELANGGARAN_VALID:
+    for row in source_rekap:
         if t_clean and t_clean != "Semua Trayek Aktif (Koridor 01-10)":
             if t_clean.lower() not in row["trayek_name"].lower() and t_clean.lower() not in row["trayek_desc"].lower():
                 continue
