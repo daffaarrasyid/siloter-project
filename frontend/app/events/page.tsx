@@ -371,7 +371,7 @@ export default function VerificationPage() {
 
               <button
                 type="button"
-                onClick={() => toast.info("Modul Analitik & Laporan Recharts.")}
+                onClick={() => router.push("/analytics")}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 font-semibold text-xs transition-colors text-left cursor-pointer"
               >
                 <BarChart3 className="w-4 h-4 text-slate-400" />
@@ -388,7 +388,7 @@ export default function VerificationPage() {
             <nav className="space-y-1">
               <button
                 type="button"
-                onClick={() => toast.info("Manajemen Pengguna Dishub.")}
+                onClick={() => router.push("/users")}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 font-semibold text-xs transition-colors text-left cursor-pointer"
               >
                 <Users className="w-4 h-4 text-slate-400" />

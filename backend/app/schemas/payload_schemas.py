@@ -16,7 +16,7 @@ class CameraCode(str, Enum):
 
 
 class ModelChoice(str, Enum):
-    YOLOV26N = "yolov26n"
+    YOLOV8S = "yolov8s"
     YOLOV8 = "yolov8"
 
 
@@ -148,11 +148,11 @@ class CameraStreamInfo(BaseModel):
 # ==============================================================================
 
 class ModelSwitchRequest(BaseModel):
-    """Request payload for switching active detection model (POST /api/model/switch)."""
+    """Request payload for model status / confirmation (POST /api/model/switch)."""
 
     model_name: ModelChoice = Field(
-        ...,
-        description="Target YOLO model architecture ('yolov26n' for primary or 'yolov8' for baseline comparison)",
+        default=ModelChoice.YOLOV8S,
+        description="Target YOLO model architecture ('yolov8s' ONNX)",
     )
 
 
@@ -172,7 +172,7 @@ class ViolationEventBase(BaseModel):
     vehicle_track_id: str = Field(..., description="ByteTrack tracked ID (e.g., 'Angkot_04')")
     detected_at: datetime = Field(default_factory=datetime.utcnow, description="Timestamp of violation")
     duration_seconds: int = Field(..., ge=0, description="Total loitering duration in seconds")
-    model_used: str = Field(..., description="Active YOLO model at capture time ('YOLOv26n' or 'YOLOv8')")
+    model_used: str = Field(default="YOLOv8s", description="Active YOLO model at capture time ('YOLOv8s')")
     inference_ms: Optional[float] = Field(None, description="Inference latency in milliseconds")
     evidence_path: Optional[str] = Field(None, description="Storage object path in Supabase Storage")
     session_type: Optional[str] = Field(None, description="Rush hour category ('Rush Hour Pagi', 'Off-Peak Siang', 'Rush Hour Sore', 'Akhir Pekan')")

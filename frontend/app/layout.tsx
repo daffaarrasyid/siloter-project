@@ -5,6 +5,9 @@ import { Toaster } from "sonner";
 export const metadata: Metadata = {
   title: "SILOTER - Sistem Pemantauan Angkot Ngetem Kota Bogor",
   description: "Sistem Informasi dan Deteksi Loitering Angkutan Umum Terpadu - Dishub Kota Bogor",
+  icons: {
+    icon: "/logo.svg",
+  },
 };
 
 export default function RootLayout({

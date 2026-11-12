@@ -13,130 +13,74 @@ from app.core.config import settings, BASE_DIR
 logger = logging.getLogger("siloter.detector_tracker")
 
 
-class DualModelDetector:
+class VehicleDetectorTracker:
     """
-    Unified Computer Vision detection and tracking service.
-    Orchestrates YOLOv26n (primary end-to-end NMS-free) and YOLOv8s (baseline comparison)
-    with ByteTrack optimized for low frame-rate (1 FPS) traffic monitoring.
-    Features thread-safe on-the-fly model switching without server restarts.
+    Dedicated Single-Model Computer Vision detection and tracking service.
+    Exclusively runs YOLOv8s in ONNX format ('yolov8s_siloter.onnx') paired
+    with ByteTrack for low-framerate (1 FPS) traffic monitoring.
+    Operates directly on the ONNX runtime with zero fallback to .pt weights.
     """
 
-    MODEL_REGISTRY: Dict[str, Dict[str, str]] = {
-        "yolov26n": {
-            "display_name": "YOLOv26n",
-            "filename": "yolov26n_siloter.onnx",
-            "description": "Primary End-to-End NMS-Free Architecture",
-        },
-        "yolov8s": {
-            "display_name": "YOLOv8s",
-            "filename": "yolov8s_siloter.onnx",
-            "description": "Baseline Comparison Architecture",
-        },
-        "yolov8": {
-            "display_name": "YOLOv8s",
-            "filename": "yolov8s_siloter.onnx",
-            "description": "Baseline Comparison Architecture (Alias)",
-        },
-    }
+    MODEL_FILENAME = "yolov8s_siloter.onnx"
+    MODEL_DISPLAY_NAME = "YOLOv8s"
+    MODEL_KEY = "yolov8s"
 
-    FALLBACK_MODEL_NAME = "yolov8n.pt"
-
-    def __init__(self, initial_model: str = "yolov26n"):
+    def __init__(self, weight_file: Optional[str] = None):
         self._lock = threading.RLock()
         self.models_dir = BASE_DIR / "models"
         self.tracker_config = str(self.models_dir / "bytetrack.yaml")
 
-        # Active model metadata
-        self.active_model_key: str = "yolov26n"
-        self.active_display_name: str = "YOLOv26n"
-        self.active_weight_path: Path = self.models_dir / "yolov26n_siloter.onnx"
-        self.is_using_fallback_weight: bool = False
+        chosen_filename = weight_file or self.MODEL_FILENAME
+        self.active_weight_path = self.models_dir / chosen_filename
 
-        # Per-camera model instances to guarantee isolated ByteTrack states (NFR-02)
+        # Active model metadata
+        self.active_model_key: str = self.MODEL_KEY
+        self.active_display_name: str = self.MODEL_DISPLAY_NAME
+
+        # Verify that the ONNX model file exists (No silent fallback to .pt)
+        if not self.active_weight_path.exists():
+            error_msg = (
+                f"Required ONNX model '{chosen_filename}' not found at '{self.active_weight_path}'. "
+                "Ensure 'yolov8s_siloter.onnx' is placed in backend/models/."
+            )
+            logger.critical(error_msg)
+            raise FileNotFoundError(error_msg)
+
+        logger.info(f"YOLOv8s ONNX detector initialized with weight: {self.active_weight_path.name}")
+
+        # Per-camera model instances to guarantee isolated ByteTrack states across camera streams (NFR-02)
         # camera_code -> YOLO instance
         self._camera_models: Dict[str, YOLO] = {}
 
-        # Initialize with requested model
-        self.switch_model(initial_model)
-
     def switch_model(self, model_name: str) -> Tuple[bool, str]:
         """
-        Switches the active model architecture on-the-fly with thread-lock safety.
-        Loads the model weights and re-initializes per-camera tracker pipelines.
+        Maintains API compatibility. Informs caller that SILOTER is strictly locked
+        to YOLOv8s ONNX in production as decided by the AI engineering specification.
         """
         normalized_key = model_name.strip().lower()
-
-        with self._lock:
-            # Match registered models
-            if normalized_key in self.MODEL_REGISTRY:
-                reg = self.MODEL_REGISTRY[normalized_key]
-                target_key = "yolov8s" if normalized_key == "yolov8" else normalized_key
-                target_filename = reg["filename"]
-                display_name = reg["display_name"]
-            else:
-                logger.warning(
-                    f"Unknown model '{model_name}'. Defaulting to 'yolov26n'."
-                )
-                target_key = "yolov26n"
-                target_filename = self.MODEL_REGISTRY["yolov26n"]["filename"]
-                display_name = self.MODEL_REGISTRY["yolov26n"]["display_name"]
-
-            target_path = self.models_dir / target_filename
-
-            # Check if custom .onnx weight exists, otherwise use fallback .pt
-            if target_path.exists():
-                selected_path = target_path
-                using_fallback = False
-                logger.info(f"Loading custom ONNX model weights: {selected_path.name}")
-            else:
-                fallback_path = self.models_dir / self.FALLBACK_MODEL_NAME
-                if fallback_path.exists():
-                    selected_path = fallback_path
-                else:
-                    selected_path = Path(self.FALLBACK_MODEL_NAME)
-                using_fallback = True
-                logger.warning(
-                    f"Custom weight file '{target_filename}' not found in '{self.models_dir}'. "
-                    f"Falling back to standard '{self.FALLBACK_MODEL_NAME}' for testing/demonstration."
-                )
-
-            # Test-load the model to verify integrity before switching active references
-            try:
-                test_model = YOLO(str(selected_path), task="detect")
-                # Pre-warm/verify names dict
-                _ = test_model.names
-            except Exception as e:
-                err_msg = f"Failed to load weights '{selected_path}': {e}"
-                logger.error(err_msg)
-                return False, err_msg
-
-            # Update active references atomically
-            self.active_model_key = target_key
-            self.active_display_name = display_name
-            self.active_weight_path = selected_path
-            self.is_using_fallback_weight = using_fallback
-
-            # Clear cached per-camera models so they re-instantiate with the new model weights
-            self._camera_models.clear()
-
-            status_msg = (
-                f"Active model successfully switched to '{display_name}' "
-                f"({'Fallback ' + self.FALLBACK_MODEL_NAME if using_fallback else selected_path.name})"
-            )
-            logger.info(status_msg)
-            return True, status_msg
+        if normalized_key in ["yolov8s", "yolov8", "yolov8s_siloter.onnx"]:
+            return True, f"Model '{self.MODEL_DISPLAY_NAME}' (ONNX) is already the active production model."
+        
+        logger.warning(
+            f"Model switch request for '{model_name}' rejected. "
+            f"SILOTER is locked exclusively to {self.MODEL_DISPLAY_NAME} ONNX."
+        )
+        return False, (
+            f"Arsitektur '{model_name}' tidak aktif. SILOTER dikunci khusus pada model "
+            f"{self.MODEL_DISPLAY_NAME} ONNX ('{self.MODEL_FILENAME}')."
+        )
 
     def _get_or_create_model_for_camera(self, camera_code: str) -> YOLO:
         """
         Retrieves or instantiates an isolated YOLO model for a given camera stream.
-        Guarantees that ByteTrack state for one camera never bleeds into another.
+        Guarantees that ByteTrack state for one camera never bleeds into another (NFR-02).
         """
         with self._lock:
             code = camera_code.strip().lower()
             if code not in self._camera_models:
                 logger.info(
-                    f"Instantiating isolated YOLO tracker for camera '{code}' "
-                    f"using model '{self.active_display_name}'"
+                    f"Instantiating isolated YOLOv8s ONNX tracker for camera '{code}' "
+                    f"using model file '{self.active_weight_path.name}'"
                 )
                 model = YOLO(str(self.active_weight_path), task="detect")
                 self._camera_models[code] = model
@@ -155,7 +99,8 @@ class DualModelDetector:
             Dict containing:
                 - 'detections': List of tracked vehicle dictionaries
                 - 'inference_ms': Float inference duration in milliseconds
-                - 'model_used': String active model display name ('YOLOv26n' or 'YOLOv8s')
+                - 'model_used': String active model display name ('YOLOv8s')
+                - 'model_weight': String weight filename ('yolov8s_siloter.onnx')
                 - 'camera_code': String camera identifier
                 - 'timestamp': UTC ISO timestamp
         """
@@ -164,6 +109,7 @@ class DualModelDetector:
                 "detections": [],
                 "inference_ms": 0.0,
                 "model_used": self.active_display_name,
+                "model_weight": self.active_weight_path.name,
                 "camera_code": camera_code,
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             }
@@ -171,11 +117,11 @@ class DualModelDetector:
         # Retrieve isolated camera model instance
         model = self._get_or_create_model_for_camera(camera_code)
 
-        # High-resolution inference timer for academic benchmarking (JICT journal)
+        # High-resolution inference timer for academic benchmarking
         start_time = time.perf_counter()
 
         try:
-            # Run Ultralytics tracking with ByteTrack
+            # Run Ultralytics tracking with ByteTrack directly on ONNX
             results = model.track(
                 source=frame,
                 persist=True,
@@ -183,12 +129,13 @@ class DualModelDetector:
                 verbose=False,
             )
         except Exception as e:
-            logger.error(f"[{camera_code}] Detection/tracking error: {e}")
+            logger.error(f"[{camera_code}] Detection/tracking error on ONNX: {e}")
             elapsed_ms = (time.perf_counter() - start_time) * 1000.0
             return {
                 "detections": [],
                 "inference_ms": round(elapsed_ms, 2),
                 "model_used": self.active_display_name,
+                "model_weight": self.active_weight_path.name,
                 "camera_code": camera_code,
                 "timestamp": datetime.now(timezone.utc).isoformat(),
                 "error": str(e),
@@ -238,19 +185,23 @@ class DualModelDetector:
         }
 
     def get_status(self) -> Dict[str, Any]:
-        """Returns the current detector service configuration and active models."""
+        """Returns the current detector service configuration and active ONNX model."""
         with self._lock:
             return {
                 "active_model": self.active_display_name,
                 "active_key": self.active_model_key,
                 "weight_filename": self.active_weight_path.name,
-                "is_fallback": self.is_using_fallback_weight,
+                "format": "ONNX",
+                "is_fallback": False,
                 "tracker_config": Path(self.tracker_config).name,
                 "active_camera_pipelines": list(self._camera_models.keys()),
             }
 
 
-# Application-wide global detector instance
-detector_service = DualModelDetector(
-    initial_model=settings.DEFAULT_YOLO_MODEL.replace("_best.pt", "").replace(".onnx", "").lower()
+# Backwards compatibility alias
+DualModelDetector = VehicleDetectorTracker
+
+# Application-wide global detector instance locked directly to yolov8s_siloter.onnx
+detector_service = VehicleDetectorTracker(
+    weight_file="yolov8s_siloter.onnx"
 )

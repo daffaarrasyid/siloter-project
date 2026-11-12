@@ -16,6 +16,7 @@ from app.api.routes_stream import router as stream_router
 from app.api.routes_config import router as config_router
 from app.api.routes_events import router as events_router
 from app.api.routes_analytics import router as analytics_router
+from app.api.routes_users import router as users_router
 from app.api.websocket import router as websocket_router, connection_manager
 
 # Configure logging
@@ -92,6 +93,7 @@ app.include_router(stream_router)
 app.include_router(config_router)
 app.include_router(events_router)
 app.include_router(analytics_router)
+app.include_router(users_router)
 app.include_router(websocket_router)
 
 

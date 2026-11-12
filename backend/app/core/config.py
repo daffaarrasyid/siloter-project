@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     SUPABASE_STORAGE_BUCKET: str = "violation-evidence"
 
     # AI & Computer Vision Models
-    DEFAULT_YOLO_MODEL: str = "yolov26n_best.pt"
+    DEFAULT_YOLO_MODEL: str = "yolov8s_siloter.onnx"
     MODELS_DIR: str = "models"
 
     # BSW Kota Bogor CCTV Live HLS Streams (.m3u8)

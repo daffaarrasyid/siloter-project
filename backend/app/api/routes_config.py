@@ -154,7 +154,7 @@ def get_model_status():
 @router.post("/model/switch", response_model=ModelSwitchResponse, tags=["Model Registry"])
 def switch_active_model(payload: ModelSwitchRequest):
     """
-    Dynamically switches active detection model (YOLOv26n vs YOLOv8s) on-the-fly.
+    Verifies that YOLOv8s ONNX is the active locked production model.
     Thread-safe and requires no server restart.
     """
     success, message = detector_service.switch_model(payload.model_name.value)

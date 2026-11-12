@@ -97,23 +97,21 @@ def run_tests():
     assert len(worker.roi_polygon) == 4
     print("  -> PUT /api/cameras/empang/config PASSED (Hot-reloaded in memory)")
 
-    # 6. Model Status and Switcher
-    print("[7/12] Testing Model Status and Dynamic Switcher...")
+    # 6. Model Status and Lock Verification
+    print("[7/12] Testing Model Status (Locked to YOLOv8s ONNX)...")
     res_mstatus = client.get("/api/model/status")
     assert res_mstatus.status_code == 200
-    print(f"  -> Initial Model: {res_mstatus.json()['active_display_name']}")
+    status_json = res_mstatus.json()
+    assert status_json["active_model"] == "YOLOv8s"
+    assert status_json["weight_filename"] == "yolov8s_siloter.onnx"
+    assert status_json["format"] == "ONNX"
+    print(f"  -> Active Model: {status_json['active_model']} ({status_json['weight_filename']})")
 
-    # Switch to YOLOv26n
-    res_switch_v26 = client.post("/api/model/switch", json={"model_name": "yolov26n"})
-    assert res_switch_v26.status_code == 200
-    assert res_switch_v26.json()["success"] is True
-    print(f"  -> Switched to: {res_switch_v26.json()['active_model']}")
-
-    # Switch back to YOLOv8s
-    res_switch_v8 = client.post("/api/model/switch", json={"model_name": "yolov8"})
+    # Confirm YOLOv8s is active
+    res_switch_v8 = client.post("/api/model/switch", json={"model_name": "yolov8s"})
     assert res_switch_v8.status_code == 200
     assert res_switch_v8.json()["success"] is True
-    print(f"  -> Switched back to: {res_switch_v8.json()['active_model']}")
+    print(f"  -> Model confirmation: {res_switch_v8.json()['message']}")
 
     # 7. Create Test Violation Events for Events & Analytics
     print("[8/12] Logging synthetic violation events to local event store...")
@@ -135,7 +133,7 @@ def run_tests():
         duration_seconds=90,
         frame=dummy_frame,
         bbox=[150, 150, 250, 250],
-        model_name="YOLOv26n",
+        model_name="YOLOv8s",
         inference_ms=18.5
     )
     assert event1 is not None and event2 is not None
