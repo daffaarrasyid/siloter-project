@@ -576,8 +576,9 @@ class StreamManager:
                 "fallback_path": settings.FALLBACK_VIDEO_EMPANG,
                 "width": 1920,
                 "height": 1080,
-                "roi": [[0.15, 0.45], [0.75, 0.45], [0.85, 0.95], [0.05, 0.95]],
+                "roi": [],
                 "threshold": 60,
+                "is_configured": False,
             },
             {
                 "code": CameraCode.SURKEN.value,
@@ -586,8 +587,9 @@ class StreamManager:
                 "fallback_path": settings.FALLBACK_VIDEO_SURKEN,
                 "width": 1920,
                 "height": 1080,
-                "roi": [[0.20, 0.40], [0.80, 0.40], [0.90, 0.95], [0.10, 0.95]],
+                "roi": [],
                 "threshold": 60,
+                "is_configured": False,
             },
             {
                 "code": CameraCode.BALAIKOTA.value,
@@ -596,8 +598,9 @@ class StreamManager:
                 "fallback_path": settings.FALLBACK_VIDEO_BALAIKOTA,
                 "width": 704,
                 "height": 576,
-                "roi": [[0.25, 0.35], [0.75, 0.35], [0.85, 0.90], [0.15, 0.90]],
+                "roi": [],
                 "threshold": 60,
+                "is_configured": False,
             },
         ]
 
@@ -609,6 +612,14 @@ class StreamManager:
                 res = supabase.table("camera_configs").select("*").execute()
                 if res.data:
                     db_map = {r["camera_code"].lower(): r for r in res.data}
+                    
+                    # Legacy dummy seed coordinates yang harus dibersihkan otomatis
+                    legacy_dummy_rois = [
+                        [[0.15, 0.45], [0.75, 0.45], [0.85, 0.95], [0.05, 0.95]],
+                        [[0.20, 0.40], [0.80, 0.40], [0.90, 0.95], [0.10, 0.95]],
+                        [[0.25, 0.35], [0.75, 0.35], [0.85, 0.90], [0.15, 0.90]],
+                    ]
+
                     for cam in camera_definitions:
                         code = cam["code"].lower()
                         if code in db_map:
@@ -619,8 +630,36 @@ class StreamManager:
                                 cam["name"] = db_cam["camera_name"].strip()
                             if db_cam.get("threshold_seconds"):
                                 cam["threshold"] = db_cam["threshold_seconds"]
-                            if db_cam.get("roi_polygon") and len(db_cam["roi_polygon"]) >= 3:
-                                cam["roi"] = db_cam["roi_polygon"]
+                            
+                            db_roi = db_cam.get("roi_polygon")
+                            is_dummy = False
+                            if db_roi and isinstance(db_roi, list) and len(db_roi) >= 3:
+                                for dummy in legacy_dummy_rois:
+                                    if len(db_roi) == len(dummy):
+                                        if all(
+                                            abs(p1[0] - p2[0]) < 0.02 and abs(p1[1] - p2[1]) < 0.02
+                                            for p1, p2 in zip(db_roi, dummy)
+                                        ):
+                                            is_dummy = True
+                                            break
+
+                            if is_dummy:
+                                logger.info(f"Purging legacy dummy seed ROI for camera '{code}'. Setting to empty.")
+                                cam["roi"] = []
+                                cam["is_configured"] = False
+                                try:
+                                    supabase.table("camera_configs").update({
+                                        "roi_polygon": [],
+                                        "is_configured": False
+                                    }).eq("camera_code", code).execute()
+                                except Exception as clean_err:
+                                    logger.warning(f"Could not auto-clean dummy ROI in Supabase: {clean_err}")
+                            elif db_cam.get("is_configured") is True and db_roi and len(db_roi) >= 3:
+                                cam["roi"] = db_roi
+                                cam["is_configured"] = True
+                            else:
+                                cam["roi"] = []
+                                cam["is_configured"] = False
         except Exception as e:
             logger.warning(f"Could not query dynamic camera configs from Supabase at startup: {e}")
 
@@ -634,10 +673,11 @@ class StreamManager:
                 default_height=cam["height"],
                 target_fps=1.0,  # 1 FPS strict throttling (FR-02, NFR-04)
             )
+            is_conf = len(cam.get("roi") or []) >= 3
             worker.update_config(
                 roi_polygon=cam["roi"],
                 threshold_seconds=cam["threshold"],
-                is_configured=True,
+                is_configured=is_conf,
             )
             self._workers[cam["code"]] = worker
 

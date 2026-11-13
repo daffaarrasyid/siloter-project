@@ -34,13 +34,9 @@ import { toast } from "sonner";
 
 interface RekapItem {
   no: number;
-  incident_id: string;
+  track_id: string;
   plate_number: string;
   plate_color: string;
-  trayek_code: string;
-  trayek_name: string;
-  trayek_desc: string;
-  trayek_color: string;
   camera_code: string;
   camera_name: string;
   waktu_wib: string;
@@ -58,8 +54,7 @@ export default function AnalyticsPage() {
 
   // Period Tab: Bulanan | Mingguan | Harian
   const [periodTab, setPeriodTab] = useState<"Bulanan" | "Mingguan" | "Harian">("Bulanan");
-  const [selectedCamera, setSelectedCamera] = useState("Semua CCTV (CAM-01 & CAM-02)");
-  const [selectedTrayek, setSelectedTrayek] = useState("Semua Trayek Aktif (Koridor 01-10)");
+  const [selectedCamera, setSelectedCamera] = useState("Semua CCTV");
   const [searchQuery, setSearchQuery] = useState("");
   const [dateRange, setDateRange] = useState("01 Okt 2026 – 31 Okt 2026");
 
@@ -117,15 +112,11 @@ export default function AnalyticsPage() {
   const [rekapRows, setRekapRows] = useState<RekapItem[]>([
     {
       no: 1,
-      incident_id: "#VIO-202610-0982",
+      track_id: "TRK-0142",
       plate_number: "F 1934 AK",
       plate_color: "Hitam / Kuning",
-      trayek_code: "02",
-      trayek_name: "Trayek 02",
-      trayek_desc: "Hijau-Kuning",
-      trayek_color: "#eab308",
       camera_code: "empang",
-      camera_name: "Simpang BTM (CAM-01)",
+      camera_name: "Jl. Djuanda - Empang",
       waktu_wib: "24 Okt 2026 - 17:14:02",
       duration_seconds: 214,
       duration_display: "214s (3m 34s)",
@@ -133,19 +124,15 @@ export default function AnalyticsPage() {
       verified_at: "24 Okt 2026 - 17:22",
       status: "VALID",
       reason: "Ngetem Menghambat Lalu Lintas",
-      notes: "Pengemudi sengaja menunggu penumpang di depan gerbang BTM > 80 detik.",
+      notes: "Pengemudi sengaja menunggu penumpang di bahu jalan > 80 detik.",
     },
     {
       no: 2,
-      incident_id: "#VIO-202610-0981",
+      track_id: "TRK-0139",
       plate_number: "F 1422 BA",
       plate_color: "Hitam / Kuning",
-      trayek_code: "03",
-      trayek_name: "Trayek 03",
-      trayek_desc: "Biru",
-      trayek_color: "#3b82f6",
       camera_code: "surken",
-      camera_name: "Jembatan Merah (CAM-02)",
+      camera_name: "Jl. Djuanda - Suryakencana",
       waktu_wib: "24 Okt 2026 - 16:58:19",
       duration_seconds: 188,
       duration_display: "188s (3m 08s)",
@@ -153,19 +140,15 @@ export default function AnalyticsPage() {
       verified_at: "24 Okt 2026 - 17:10",
       status: "VALID",
       reason: "Menunggu Penumpang di Zona Larangan",
-      notes: "Penurunan dan penjemputan penumpang di area terlarang Jembatan Merah.",
+      notes: "Penurunan dan penjemputan penumpang di area terlarang Suryakencana.",
     },
     {
       no: 3,
-      incident_id: "#VIO-202610-0980",
+      track_id: "TRK-0135",
       plate_number: "F 1803 AA",
       plate_color: "Hitam / Kuning",
-      trayek_code: "02",
-      trayek_name: "Trayek 02",
-      trayek_desc: "Hijau-Kuning",
-      trayek_color: "#eab308",
       camera_code: "empang",
-      camera_name: "Simpang BTM (CAM-01)",
+      camera_name: "Jl. Djuanda - Empang",
       waktu_wib: "24 Okt 2026 - 16:42:56",
       duration_seconds: 245,
       duration_display: "245s (4m 05s)",
@@ -177,15 +160,11 @@ export default function AnalyticsPage() {
     },
     {
       no: 4,
-      incident_id: "#VIO-202610-0979",
+      track_id: "TRK-0130",
       plate_number: "F 1198 ZB",
       plate_color: "Hitam / Kuning",
-      trayek_code: "03",
-      trayek_name: "Trayek 03",
-      trayek_desc: "Biru",
-      trayek_color: "#3b82f6",
       camera_code: "surken",
-      camera_name: "Jembatan Merah (CAM-02)",
+      camera_name: "Jl. Djuanda - Suryakencana",
       waktu_wib: "24 Okt 2026 - 15:30:11",
       duration_seconds: 130,
       duration_display: "130s (2m 10s)",
@@ -197,15 +176,11 @@ export default function AnalyticsPage() {
     },
     {
       no: 5,
-      incident_id: "#VIO-202610-0978",
+      track_id: "TRK-0125",
       plate_number: "F 1650 DD",
       plate_color: "Hitam / Kuning",
-      trayek_code: "10",
-      trayek_name: "Trayek 10",
-      trayek_desc: "Merah Bata",
-      trayek_color: "#ef4444",
       camera_code: "surken",
-      camera_name: "Jembatan Merah (CAM-02)",
+      camera_name: "Jl. Djuanda - Suryakencana",
       waktu_wib: "24 Okt 2026 - 14:18:49",
       duration_seconds: 195,
       duration_display: "195s (3m 15s)",
@@ -266,31 +241,26 @@ export default function AnalyticsPage() {
     const matchSearch =
       searchQuery === "" ||
       r.plate_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      r.incident_id.toLowerCase().includes(searchQuery.toLowerCase());
+      r.track_id.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchCam =
+      selectedCamera === "Semua CCTV" ||
       selectedCamera === "Semua CCTV (CAM-01 & CAM-02)" ||
       r.camera_name.toLowerCase().includes(selectedCamera.toLowerCase()) ||
       r.camera_code.toLowerCase().includes(selectedCamera.toLowerCase());
 
-    const matchTrayek =
-      selectedTrayek === "Semua Trayek Aktif (Koridor 01-10)" ||
-      r.trayek_name.toLowerCase().includes(selectedTrayek.toLowerCase()) ||
-      r.trayek_desc.toLowerCase().includes(selectedTrayek.toLowerCase());
-
-    return matchSearch && matchCam && matchTrayek;
+    return matchSearch && matchCam;
   });
 
   // Action: Export Excel (.CSV)
   const handleExportExcel = () => {
     const headers = [
       "No",
-      "ID Insiden",
-      "Plat Nomor",
-      "Trayek",
-      "Kamera CCTV",
-      "Waktu Kejadian (WIB)",
-      "Durasi Ngetem (Detik)",
+      "Track ID",
+      "Nomor Plat",
+      "Lokasi",
+      "Tanggal dan Waktu",
+      "Durasi Ngetem",
       "Petugas Verifikator",
       "Waktu Validasi",
       "Status",
@@ -299,12 +269,11 @@ export default function AnalyticsPage() {
 
     const rows = filteredRows.map((r) => [
       r.no,
-      r.incident_id,
+      r.track_id,
       r.plate_number,
-      `"${r.trayek_name} (${r.trayek_desc})"`,
       `"${r.camera_name}"`,
       `"${r.waktu_wib}"`,
-      r.duration_seconds,
+      `"${r.duration_display}"`,
       `"${r.verifier_name}"`,
       `"${r.verified_at}"`,
       r.status,
@@ -429,47 +398,23 @@ export default function AnalyticsPage() {
                 onChange={(e) => setSelectedCamera(e.target.value)}
                 className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
               >
-                <option value="Semua CCTV (CAM-01 & CAM-02)">
-                  Semua CCTV (CAM-01 &amp; CAM-02)
-                </option>
-                <option value="Simpang BTM (CAM-01)">
-                  Simpang BTM (CAM-01)
-                </option>
-                <option value="Jembatan Merah (CAM-02)">
-                  Jembatan Merah (CAM-02)
-                </option>
+                <option value="Semua CCTV">Semua CCTV</option>
+                <option value="Jl. Djuanda - Empang">Jl. Djuanda - Empang</option>
+                <option value="Jl. Djuanda - Suryakencana">Jl. Djuanda - Suryakencana</option>
+                <option value="Jl. Djuanda - Balaikota">Jl. Djuanda - Balaikota</option>
               </select>
             </div>
 
-            {/* Trayek */}
-            <div className="flex flex-col min-w-[210px]">
-              <span className="text-[10px] font-semibold text-slate-500 mb-0.5">
-                Trayek
-              </span>
-              <select
-                value={selectedTrayek}
-                onChange={(e) => setSelectedTrayek(e.target.value)}
-                className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
-              >
-                <option value="Semua Trayek Aktif (Koridor 01-10)">
-                  Semua Trayek Aktif (Koridor 01-10)
-                </option>
-                <option value="Trayek 02">Trayek 02 (Hijau-Kuning)</option>
-                <option value="Trayek 03">Trayek 03 (Biru)</option>
-                <option value="Trayek 10">Trayek 10 (Merah Bata)</option>
-              </select>
-            </div>
-
-            {/* Search Plat / ID */}
+            {/* Search Plat / Track ID */}
             <div className="flex flex-col min-w-[160px] flex-1">
               <span className="text-[10px] font-semibold text-slate-500 mb-0.5">
-                Cari Plat / ID Insiden
+                Cari Plat / Track ID
               </span>
               <div className="relative">
                 <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
-                  placeholder="Cari Plat / ID..."
+                  placeholder="Cari Plat / Track ID..."
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);
@@ -845,11 +790,10 @@ export default function AnalyticsPage() {
                 <thead>
                   <tr className="border-b border-slate-100 bg-slate-50/70 text-xs font-semibold text-slate-600">
                     <th className="py-3 px-4 text-center">No</th>
-                    <th className="py-3 px-4">ID Insiden</th>
-                    <th className="py-3 px-4">Nomor Polisi</th>
-                    <th className="py-3 px-4">Trayek</th>
-                    <th className="py-3 px-4">Lokasi CCTV</th>
-                    <th className="py-3 px-4">Waktu (WIB)</th>
+                    <th className="py-3 px-4">Track ID</th>
+                    <th className="py-3 px-4">Nomor Plat</th>
+                    <th className="py-3 px-4">Lokasi</th>
+                    <th className="py-3 px-4">Tanggal dan Waktu</th>
                     <th className="py-3 px-4">Durasi</th>
                     <th className="py-3 px-4">Petugas Verifikator</th>
                     <th className="py-3 px-4 text-center">Status</th>
@@ -861,7 +805,7 @@ export default function AnalyticsPage() {
                     .slice((currentPage - 1) * pageSize, currentPage * pageSize)
                     .map((row, idx) => (
                     <tr
-                      key={row.incident_id}
+                      key={row.track_id}
                       onClick={() => setSelectedIncident(row)}
                       className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
                     >
@@ -870,42 +814,24 @@ export default function AnalyticsPage() {
                         {(currentPage - 1) * pageSize + idx + 1}
                       </td>
 
-                      {/* ID INSIDEN */}
+                      {/* TRACK ID */}
                       <td className="py-3.5 px-4 font-mono font-semibold text-slate-800">
-                        {row.incident_id}
+                        {row.track_id}
                       </td>
 
-                      {/* PLAT NOMOR */}
+                      {/* NOMOR PLAT */}
                       <td className="py-3.5 px-4">
                         <span className="inline-block px-2.5 py-1 rounded-md bg-slate-100 font-mono font-semibold text-slate-900 tracking-wide text-xs border border-slate-200">
                           {row.plate_number}
                         </span>
                       </td>
 
-                      {/* TRAYEK */}
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className="w-2.5 h-2.5 rounded-full shrink-0"
-                            style={{ backgroundColor: row.trayek_color }}
-                          />
-                          <div>
-                            <p className="font-semibold text-slate-800 leading-tight">
-                              {row.trayek_name}
-                            </p>
-                            <p className="text-[11px] text-slate-400">
-                              ({row.trayek_desc})
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* LOKASI / KAMERA */}
+                      {/* LOKASI */}
                       <td className="py-3.5 px-4 font-medium text-slate-700">
                         {row.camera_name}
                       </td>
 
-                      {/* WAKTU (WIB) */}
+                      {/* TANGGAL DAN WAKTU */}
                       <td className="py-3.5 px-4 font-mono text-[11px] text-slate-500">
                         {row.waktu_wib}
                       </td>
@@ -915,7 +841,7 @@ export default function AnalyticsPage() {
                         {row.duration_display}
                       </td>
 
-                      {/* PETUGAS */}
+                      {/* PETUGAS VERIFIKATOR */}
                       <td className="py-3.5 px-4">
                         <div>
                           <p className="font-semibold text-slate-800 leading-tight">
@@ -952,7 +878,7 @@ export default function AnalyticsPage() {
                   ))}
                   {filteredRows.length === 0 && (
                     <tr>
-                      <td colSpan={10} className="py-8 text-center text-slate-400 text-xs">
+                      <td colSpan={9} className="py-8 text-center text-slate-400 text-xs">
                         Tidak ada rekaman pelanggaran yang cocok dengan filter.
                       </td>
                     </tr>
@@ -1061,8 +987,8 @@ export default function AnalyticsPage() {
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="font-bold text-slate-900 text-base">
-                    Detail Insiden {selectedIncident.incident_id}
+                  <h3 className="font-bold text-slate-900 text-base font-mono">
+                    Detail Pelanggaran {selectedIncident.track_id}
                   </h3>
                   <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-red-50 text-red-600 border border-red-200">
                     {selectedIncident.status}
@@ -1109,15 +1035,6 @@ export default function AnalyticsPage() {
               </div>
 
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs space-y-2">
-                <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                    TRAYEK &amp; WARNA
-                  </span>
-                  <p className="font-bold text-slate-800 mt-0.5">
-                    {selectedIncident.trayek_name} – {selectedIncident.trayek_desc}
-                  </p>
-                </div>
-
                 <div>
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
                     ALASAN PELANGGARAN

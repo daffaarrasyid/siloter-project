@@ -9,6 +9,7 @@ import numpy as np
 from ultralytics import YOLO
 
 from app.core.config import settings, BASE_DIR
+from app.services.track_id_manager import track_id_manager
 
 logger = logging.getLogger("siloter.detector_tracker")
 
@@ -157,12 +158,12 @@ class VehicleDetectorTracker:
                     cls_id = int(box.cls[0].cpu().numpy())
                     cls_name = model.names.get(cls_id, f"class_{cls_id}")
 
-                    # Formatted Track ID (e.g., 'Angkot_01', 'Angkot_12')
+                    # Persistent Monotonic Track ID (e.g., 'TRK-0001', 'TRK-0002')
                     raw_track_id = int(box.id[0].cpu().numpy()) if box.id is not None else None
                     if raw_track_id is not None:
-                        formatted_track_id = f"Angkot_{raw_track_id:02d}"
+                        formatted_track_id = track_id_manager.get_or_create(camera_code, raw_track_id)
                     else:
-                        formatted_track_id = "Angkot_Untracked"
+                        formatted_track_id = "TRK-UNTRACKED"
 
                     detections.append(
                         {

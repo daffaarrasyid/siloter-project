@@ -179,9 +179,9 @@ VALUES
         'https://restreamer3.kotabogor.go.id/memfs/31b05614-19d8-492e-b244-903e8aa28292_output_0.m3u8?session=CuUsqAB6iKy6e7abEQhpj5',
         1920,
         1080,
-        '[[0.15, 0.45], [0.75, 0.45], [0.85, 0.95], [0.05, 0.95]]'::jsonb,
+        '[]'::jsonb,
         60,
-        true
+        false
     ),
     (
         'surken',
@@ -189,9 +189,9 @@ VALUES
         'https://restreamer3.kotabogor.go.id/memfs/f6b50f38-9184-418e-b3f9-05faaa9b387d_output_0.m3u8?session=kWKDDNXfDZUySPTX5GgTSk',
         1920,
         1080,
-        '[[0.20, 0.40], [0.80, 0.40], [0.90, 0.95], [0.10, 0.95]]'::jsonb,
+        '[]'::jsonb,
         60,
-        true
+        false
     ),
     (
         'balaikota',
@@ -199,9 +199,9 @@ VALUES
         'https://restreamer2.kotabogor.go.id/memfs/f707b72a-5c95-421a-9f3a-2e478794bd76_output_0.m3u8?session=AzjP8VmQxJDBFdZhJJt7C5',
         704,
         576,
-        '[[0.25, 0.35], [0.75, 0.35], [0.85, 0.90], [0.15, 0.90]]'::jsonb,
+        '[]'::jsonb,
         60,
-        true
+        false
     )
 ON CONFLICT (camera_code) DO UPDATE SET
     camera_name = EXCLUDED.camera_name,

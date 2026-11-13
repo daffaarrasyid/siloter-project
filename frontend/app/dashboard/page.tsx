@@ -16,6 +16,7 @@ import {
   Video,
   X,
   MapPin,
+  ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -26,8 +27,7 @@ interface ViolationEventItem {
   isPlateManual: boolean;
   cameraCode: string;
   cameraName: string;
-  trayekName: string;
-  trayekCode: string;
+  dateWib?: string;
   timeWib: string;
   durationSeconds: number;
   thresholdSeconds: number;
@@ -47,6 +47,11 @@ export default function DashboardPage() {
 
   // State kamera terpilih
   const [selectedCamera, setSelectedCamera] = useState<string>("empang");
+  // Konfigurasi kamera & status ROI dari backend
+  const [cameraConfigs, setCameraConfigs] = useState<Record<string, any>>({});
+
+  // State periode filter statistik (Hari Ini default, Minggu Ini, Bulan Ini, Semua Waktu)
+  const [statsPeriod, setStatsPeriod] = useState<"today" | "week" | "month" | "all">("today");
 
   // State statistik KPI terintegrasi (dimuat dari backend API)
   const [stats, setStats] = useState({
@@ -54,6 +59,8 @@ export default function DashboardPage() {
     validViolations: 0,
     pendingViolations: 0,
     averageDurationSec: 0,
+    trendText: "Pantauan 24 jam terakhir",
+    periodLabel: "Hari Ini",
   });
 
   // Filter status tabel: "Semua" | "Pending" | "Valid" | "Invalid"
@@ -72,13 +79,12 @@ export default function DashboardPage() {
   const [events, setEvents] = useState<ViolationEventItem[]>([
     {
       id: "ev-142",
-      trackId: "TRK-142",
+      trackId: "TRK-0142",
       plateNumber: "F 1934 AK",
       isPlateManual: true,
       cameraCode: "empang",
-      cameraName: "CCTV 01 • Simpang BTM",
-      trayekName: "02 Sukasari - Bubulak",
-      trayekCode: "02",
+      cameraName: "Jl. Djuanda - Empang",
+      dateWib: "13 Nov 2026",
       timeWib: "10:42:15",
       durationSeconds: 84,
       thresholdSeconds: 60,
@@ -88,13 +94,12 @@ export default function DashboardPage() {
     },
     {
       id: "ev-145",
-      trackId: "TRK-145",
+      trackId: "TRK-0145",
       plateNumber: "F 1422 BA",
       isPlateManual: true,
       cameraCode: "empang",
-      cameraName: "CCTV 01 • Simpang BTM",
-      trayekName: "10 Bantar Kemang - Merdeka",
-      trayekCode: "10",
+      cameraName: "Jl. Djuanda - Empang",
+      dateWib: "13 Nov 2026",
       timeWib: "10:38:02",
       durationSeconds: 68,
       thresholdSeconds: 60,
@@ -104,13 +109,12 @@ export default function DashboardPage() {
     },
     {
       id: "ev-148",
-      trackId: "TRK-148",
+      trackId: "TRK-0148",
       plateNumber: "Belum Diinput",
       isPlateManual: false,
       cameraCode: "empang",
-      cameraName: "CCTV 01 • Simpang BTM",
-      trayekName: "03 Baranangsiang - Bubulak",
-      trayekCode: "03",
+      cameraName: "Jl. Djuanda - Empang",
+      dateWib: "13 Nov 2026",
       timeWib: "10:31:18",
       durationSeconds: 75,
       thresholdSeconds: 60,
@@ -120,13 +124,12 @@ export default function DashboardPage() {
     },
     {
       id: "ev-091",
-      trackId: "TRK-091",
+      trackId: "TRK-0091",
       plateNumber: "F 2201 CD",
       isPlateManual: true,
       cameraCode: "surken",
-      cameraName: "CCTV 02 • Suryakencana",
-      trayekName: "03 Baranangsiang - Bubulak",
-      trayekCode: "03",
+      cameraName: "Jl. Djuanda - Suryakencana",
+      dateWib: "13 Nov 2026",
       timeWib: "09:55:44",
       durationSeconds: 61,
       thresholdSeconds: 60,
@@ -136,13 +139,12 @@ export default function DashboardPage() {
     },
     {
       id: "ev-201",
-      trackId: "TRK-201",
+      trackId: "TRK-0201",
       plateNumber: "F 0887 HH",
       isPlateManual: true,
       cameraCode: "empang",
-      cameraName: "CCTV 01 • Simpang BTM",
-      trayekName: "02 Sukasari - Bubulak",
-      trayekCode: "02",
+      cameraName: "Jl. Djuanda - Empang",
+      dateWib: "13 Nov 2026",
       timeWib: "09:41:30",
       durationSeconds: 72,
       thresholdSeconds: 60,
@@ -156,9 +158,9 @@ export default function DashboardPage() {
   const loadBackendData = async () => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
-    // 1. Fetch Stats Real-time (Revisi Item 6 & 10)
+    // 1. Fetch Stats Real-time dengan filter periode dinamis
     try {
-      const statsRes = await fetch(`${apiUrl}/api/events/summary/stats`);
+      const statsRes = await fetch(`${apiUrl}/api/events/summary/stats?period=${statsPeriod}`);
       if (statsRes.ok) {
         const statsJson = await statsRes.json();
         setStats({
@@ -166,6 +168,8 @@ export default function DashboardPage() {
           validViolations: statsJson.valid_count ?? 0,
           pendingViolations: statsJson.pending_count ?? 0,
           averageDurationSec: Math.round(statsJson.average_duration_seconds ?? 0),
+          trendText: statsJson.trend_label || "Pantauan 24 jam terakhir",
+          periodLabel: statsJson.period_label || "Hari Ini",
         });
       }
     } catch (e) {
@@ -180,13 +184,14 @@ export default function DashboardPage() {
         if (Array.isArray(data) && data.length > 0) {
           const mapped: ViolationEventItem[] = data.map((item: any, idx: number) => ({
             id: item.id || `ev-${idx}`,
-            trackId: item.vehicle_track_id || `TRK-${idx + 100}`,
+            trackId: item.vehicle_track_id || `TRK-${String(idx + 100).padStart(4, "0")}`,
             plateNumber: item.plate_number || (item.validation_status === "Valid" ? `F ${1900 + idx} AK` : "Belum Diinput"),
             isPlateManual: Boolean(item.plate_number),
             cameraCode: item.camera_code || "empang",
             cameraName: item.camera_name || "Jl. Djuanda - Empang",
-            trayekName: "02 Sukasari - Bubulak",
-            trayekCode: "02",
+            dateWib: item.detected_at
+              ? new Date(item.detected_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })
+              : "13 Nov 2026",
             timeWib: item.detected_at
               ? new Date(item.detected_at).toLocaleTimeString("id-ID", { hour12: false })
               : "10:40:00",
@@ -201,6 +206,23 @@ export default function DashboardPage() {
       }
     } catch (err) {
       console.warn("Backend events offline, using initial records:", err);
+    }
+
+    // 3. Fetch Camera Configs (ROI Status & Threshold)
+    try {
+      const camRes = await fetch(`${apiUrl}/api/cameras`);
+      if (camRes.ok) {
+        const camJson = await camRes.json();
+        if (Array.isArray(camJson)) {
+          const map: Record<string, any> = {};
+          camJson.forEach((c: any) => {
+            map[c.camera_code] = c;
+          });
+          setCameraConfigs(map);
+        }
+      }
+    } catch (e) {
+      console.warn("Backend camera configs offline:", e);
     }
   };
 
@@ -217,6 +239,11 @@ export default function DashboardPage() {
 
     return () => clearInterval(interval);
   }, []);
+
+  // Re-fetch saat filter periode statistik diubah
+  useEffect(() => {
+    loadBackendData();
+  }, [statsPeriod]);
 
   // Listen to WebSocket real-time loitering alerts (Item 6 & 10)
   useEffect(() => {
@@ -392,6 +419,14 @@ export default function DashboardPage() {
                   }}
                 />
 
+                {/* INDIKATOR STATUS ZONA ROI JIKA BELUM ADA */}
+                {(!cameraConfigs[selectedCamera]?.roi_polygon || cameraConfigs[selectedCamera]?.roi_polygon?.length < 3) && (
+                  <div className="absolute top-3 left-3 bg-amber-500/90 backdrop-blur-xs text-slate-950 text-[10px] font-semibold px-2.5 py-1 rounded-md shadow-md flex items-center gap-1.5 border border-amber-400 pointer-events-none">
+                    <AlertTriangle className="w-3 h-3 text-slate-950" />
+                    <span>Zona ROI Belum Dikonfigurasi</span>
+                  </div>
+                )}
+
                 {/* INDIKATOR FPS DI POJOK KANAN BAWAH (Item 5) */}
                 <div className="absolute bottom-3 right-3 bg-slate-900/85 backdrop-blur-xs text-white text-[10px] font-mono px-2 py-0.5 rounded-md border border-slate-700/60 shadow-md pointer-events-none">
                   FPS: 1.0 (BSW Fair-Use)
@@ -404,6 +439,24 @@ export default function DashboardPage() {
                   <MapPin className="w-3.5 h-3.5 text-blue-600" />
                   {currentCameraObj.dbName}
                 </span>
+
+                <div>
+                  {cameraConfigs[selectedCamera]?.roi_polygon && cameraConfigs[selectedCamera]?.roi_polygon?.length >= 3 ? (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                      Zona ROI Aktif ({cameraConfigs[selectedCamera]?.threshold_seconds || 60}s)
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => router.push("/zones")}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100 transition-colors cursor-pointer"
+                    >
+                      <AlertTriangle className="w-3 h-3 text-amber-600" />
+                      <span>Belum Ada Zona ROI • <span className="underline font-bold">Atur di Menu Zona</span></span>
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -453,7 +506,7 @@ export default function DashboardPage() {
                               </span>
                             </div>
                             <p className="text-[11px] text-slate-500 mt-1">
-                              {item.trayekName} &bull; {item.cameraName}
+                              {item.trackId} &bull; {item.cameraName}
                             </p>
                             {/* Label Input Manual Petugas (HITL) - Item 9 */}
                             <p className="text-[10px] text-blue-700 font-semibold mt-0.5">
@@ -499,90 +552,118 @@ export default function DashboardPage() {
           </div>
 
           {/* ===================================================================
-              BARIS 2: 4 KARTU STATISTIK KPI TERINTEGRASI (Item 10)
+              BARIS 2: 4 KARTU STATISTIK KPI TERINTEGRASI DENGAN FILTER PERIODE
               =================================================================== */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Card 1: Angkot Hari Ini */}
-            <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs flex items-center justify-between">
-              <div>
-                <span className="text-xs font-semibold text-slate-500 block">
-                  Angkot Hari Ini
-                </span>
-                <div className="flex items-baseline gap-2 mt-1">
-                  <span className="text-3xl font-bold text-slate-900">
-                    {stats.totalAngkotToday}
-                  </span>
-                  <span className="text-xs font-medium text-slate-500">Unit</span>
-                </div>
-                <span className="text-[11px] text-emerald-600 font-semibold mt-1 block">
-                  +12% vs kemarin
-                </span>
-              </div>
-              <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
-                <Car className="w-6 h-6" />
+          <div className="space-y-2.5">
+            {/* DROPDOWN FILTER RENTANG WAKTU (TEPAT DI ATAS CARD ANGKOT HARI INI) */}
+            <div className="flex items-center gap-2.5">
+              <span className="text-xs font-semibold text-slate-600">Rentang Waktu:</span>
+              <div className="relative inline-block">
+                <select
+                  id="period-filter-select"
+                  value={statsPeriod}
+                  onChange={(e) => setStatsPeriod(e.target.value as "today" | "week" | "month" | "all")}
+                  className="appearance-none bg-white border border-slate-300 hover:border-blue-500 rounded-xl px-3.5 py-1.5 pr-8 text-xs font-bold text-slate-800 shadow-xs focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 cursor-pointer transition-all"
+                >
+                  <option value="today">Hari Ini</option>
+                  <option value="week">Minggu Ini</option>
+                  <option value="month">Bulan Ini</option>
+                  <option value="all">Semua Waktu</option>
+                </select>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
             </div>
 
-            {/* Card 2: Pelanggaran Valid */}
-            <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs flex items-center justify-between">
-              <div>
-                <span className="text-xs font-semibold text-slate-500 block">
-                  Pelanggaran Valid
-                </span>
-                <div className="flex items-baseline gap-2 mt-1">
-                  <span className="text-3xl font-bold text-red-600">
-                    {stats.validViolations}
+            {/* Grid 4 Kartu KPI */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Card 1: Angkot (Judul Berubah Dinamis Mengikuti Rentang Waktu) */}
+              <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs flex items-center justify-between">
+                <div>
+                  <span className="text-xs font-semibold text-slate-500 block">
+                    {statsPeriod === "today"
+                      ? "Angkot Hari Ini"
+                      : statsPeriod === "week"
+                      ? "Angkot Minggu Ini"
+                      : statsPeriod === "month"
+                      ? "Angkot Bulan Ini"
+                      : "Angkot Semua Waktu"}
                   </span>
-                  <span className="text-xs font-medium text-slate-500">Kasus</span>
+                  <div className="flex items-baseline gap-2 mt-1">
+                    <span className="text-3xl font-bold text-slate-900">
+                      {stats.totalAngkotToday}
+                    </span>
+                    <span className="text-xs font-medium text-slate-500">Unit</span>
+                  </div>
+                  <span className="text-[11px] text-emerald-600 font-semibold mt-1 block">
+                    {statsPeriod === "today" ? "+12% vs kemarin" : stats.trendText}
+                  </span>
                 </div>
-                <span className="text-[11px] text-slate-400 font-medium mt-1 block">
-                  Tervalidasi oleh petugas
-                </span>
+                <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
+                  <Car className="w-6 h-6" />
+                </div>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center text-red-600">
-                <AlertTriangle className="w-6 h-6" />
-              </div>
-            </div>
 
-            {/* Card 3: Belum Diverifikasi */}
-            <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs flex items-center justify-between">
-              <div>
-                <span className="text-xs font-semibold text-slate-500 block">
-                  Belum Diverifikasi
-                </span>
-                <div className="flex items-baseline gap-2 mt-1">
-                  <span className="text-3xl font-bold text-amber-500">
-                    {stats.pendingViolations}
+              {/* Card 2: Pelanggaran Valid */}
+              <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs flex items-center justify-between">
+                <div>
+                  <span className="text-xs font-semibold text-slate-500 block">
+                    Pelanggaran Valid
                   </span>
-                  <span className="text-xs font-medium text-slate-500">Pending</span>
+                  <div className="flex items-baseline gap-2 mt-1">
+                    <span className="text-3xl font-bold text-red-600">
+                      {stats.validViolations}
+                    </span>
+                    <span className="text-xs font-medium text-slate-500">Kasus</span>
+                  </div>
+                  <span className="text-[11px] text-slate-400 font-medium mt-1 block">
+                    Tervalidasi periode ini
+                  </span>
                 </div>
-                <span className="text-[11px] text-amber-600 font-semibold mt-1 block">
-                  Menunggu review lapangan
-                </span>
+                <div className="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center text-red-600">
+                  <AlertTriangle className="w-6 h-6" />
+                </div>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500">
-                <Clock className="w-6 h-6" />
-              </div>
-            </div>
 
-            {/* Card 4: Rata-Rata Durasi Ngetem */}
-            <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs flex items-center justify-between">
-              <div>
-                <span className="text-xs font-semibold text-slate-500 block">
-                  Rata-Rata Durasi
-                </span>
-                <div className="flex items-baseline gap-2 mt-1">
-                  <span className="text-3xl font-bold text-slate-900 font-mono">
-                    {stats.averageDurationSec}
+              {/* Card 3: Belum Diverifikasi */}
+              <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs flex items-center justify-between">
+                <div>
+                  <span className="text-xs font-semibold text-slate-500 block">
+                    Belum Diverifikasi
                   </span>
-                  <span className="text-xs font-medium text-slate-500">Detik</span>
+                  <div className="flex items-baseline gap-2 mt-1">
+                    <span className="text-3xl font-bold text-amber-500">
+                      {stats.pendingViolations}
+                    </span>
+                    <span className="text-xs font-medium text-slate-500">Pending</span>
+                  </div>
+                  <span className="text-[11px] text-amber-600 font-semibold mt-1 block">
+                    Menunggu review lapangan
+                  </span>
                 </div>
-                <span className="text-[11px] text-slate-400 font-medium mt-1 block">
-                  Batas wajar: maks. 60 detik
-                </span>
+                <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500">
+                  <Clock className="w-6 h-6" />
+                </div>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
-                <Timer className="w-6 h-6" />
+
+              {/* Card 4: Rata-Rata Durasi Ngetem */}
+              <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs flex items-center justify-between">
+                <div>
+                  <span className="text-xs font-semibold text-slate-500 block">
+                    Rata-Rata Durasi
+                  </span>
+                  <div className="flex items-baseline gap-2 mt-1">
+                    <span className="text-3xl font-bold text-slate-900 font-mono">
+                      {stats.averageDurationSec}
+                    </span>
+                    <span className="text-xs font-medium text-slate-500">Detik</span>
+                  </div>
+                  <span className="text-[11px] text-slate-400 font-medium mt-1 block">
+                    Batas wajar: maks. 60 detik
+                  </span>
+                </div>
+                <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                  <Timer className="w-6 h-6" />
+                </div>
               </div>
             </div>
           </div>
@@ -628,10 +709,9 @@ export default function DashboardPage() {
                 <thead>
                   <tr className="border-b border-slate-100 bg-slate-50/70 text-xs font-semibold text-slate-600">
                     <th className="py-3 px-6">Track ID</th>
-                    {/* Header Tanpa OCR (Item 9) */}
-                    <th className="py-3 px-6">Nomor Polisi (HITL)</th>
-                    <th className="py-3 px-6">Lokasi CCTV</th>
-                    <th className="py-3 px-6">Waktu (WIB)</th>
+                    <th className="py-3 px-6">Nomor Plat</th>
+                    <th className="py-3 px-6">Lokasi</th>
+                    <th className="py-3 px-6">Tanggal dan Waktu</th>
                     <th className="py-3 px-6">Durasi</th>
                     <th className="py-3 px-6">Status</th>
                     <th className="py-3 px-6 text-right">Aksi</th>
@@ -649,15 +729,12 @@ export default function DashboardPage() {
                         <span className="font-mono font-semibold text-slate-900 px-2 py-0.5 rounded bg-slate-100 border border-slate-200">
                           {row.plateNumber}
                         </span>
-                        <p className="text-[10px] text-slate-400 mt-0.5">
-                          {row.trayekName}
-                        </p>
                       </td>
                       <td className="py-4 px-6 font-medium text-slate-700">
                         {row.cameraName}
                       </td>
-                      <td className="py-4 px-6 font-mono text-slate-500">
-                        {row.timeWib}
+                      <td className="py-4 px-6 font-mono text-slate-500 text-xs">
+                        {row.dateWib ? `${row.dateWib}, ` : ""}{row.timeWib} WIB
                       </td>
                       <td className="py-4 px-6 font-mono font-bold text-red-600">
                         {row.durationSeconds} Detik
@@ -809,7 +886,7 @@ export default function DashboardPage() {
                   Verifikasi Pelanggaran Ngetem
                 </h3>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  ID: {activeVerifyEvent.id} &bull; {activeVerifyEvent.trackId}
+                  Track ID: {activeVerifyEvent.trackId}
                 </p>
               </div>
               <button

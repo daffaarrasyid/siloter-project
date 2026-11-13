@@ -650,8 +650,8 @@ export default function OnboardingStep2Page() {
                   <p className="text-xs font-bold text-slate-900 mt-0.5">{selectedCam.resolution}</p>
                 </div>
                 <div className="border-x border-slate-200/80">
-                  <p className="text-[10px] font-medium text-slate-500">Trayek Utama</p>
-                  <p className="text-xs font-bold text-slate-900 mt-0.5">{selectedCam.trayek_utama}</p>
+                  <p className="text-[10px] font-medium text-slate-500">FPS Stream</p>
+                  <p className="text-xs font-bold text-slate-900 mt-0.5">1.0 FPS (BSW)</p>
                 </div>
                 <div>
                   <p className="text-[10px] font-medium text-slate-500">Kepadatan</p>

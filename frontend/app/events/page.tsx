@@ -41,7 +41,6 @@ import { toast } from "sonner";
 
 interface VerificationItem {
   id: string;
-  incidentCode: string;
   trackId: string;
   cameraCode: string;
   cameraName: string;
@@ -53,9 +52,6 @@ interface VerificationItem {
   plateNumber: string;
   isPlateManual: boolean;
   status: "Pending" | "Valid" | "Invalid";
-  trayekCode: string;
-  trayekName: string;
-  trayekSub: string;
   reason: string;
   notes: string;
   verifier: string;
@@ -82,23 +78,19 @@ export default function VerificationPage() {
   const [items, setItems] = useState<VerificationItem[]>([
     {
       id: "ev-088",
-      incidentCode: "#N-20261006-088",
-      trackId: "Track #142",
+      trackId: "TRK-0142",
       cameraCode: "empang",
-      cameraName: "Simpang BTM (CAM-01)",
-      cameraLabel: "Simpang BTM (CAM-01)",
-      detectedAt: "06 Okt 2026, 10:42:15 WIB",
+      cameraName: "Jl. Djuanda - Empang",
+      cameraLabel: "Jl. Djuanda - Empang",
+      detectedAt: "13 Nov 2026, 10:42:15 WIB",
       timeWib: "10:42:15 WIB",
       durationSeconds: 84.2,
       thresholdSeconds: 60,
       plateNumber: "F 1934 AK",
       isPlateManual: true,
       status: "Pending",
-      trayekCode: "02",
-      trayekName: "Trayek 02: Sukasari – Bubulak PP",
-      trayekSub: "Bodi Hijau Pintu Kuning • Organda Kota Bogor",
       reason: "Ngetem Menghambat Lalu Lintas",
-      notes: "Pengemudi sengaja menunggu penumpang di depan gerbang BTM > 80 detik.",
+      notes: "Pengemudi sengaja menunggu penumpang di bahu jalan > 80 detik.",
       verifier: "Budi Santoso (Petugas 04)",
       evidenceUrl: "/placeholder-angkot.jpg",
       cropUrl: "/placeholder-crop.jpg",
@@ -106,21 +98,17 @@ export default function VerificationPage() {
     },
     {
       id: "ev-087",
-      incidentCode: "#N-20261006-087",
-      trackId: "Track #139",
+      trackId: "TRK-0139",
       cameraCode: "surken",
-      cameraName: "Jembatan Merah (CAM-02)",
-      cameraLabel: "Jembatan Merah (CAM-02)",
-      detectedAt: "06 Okt 2026, 10:39:04 WIB",
+      cameraName: "Jl. Djuanda - Suryakencana",
+      cameraLabel: "Jl. Djuanda - Suryakencana",
+      detectedAt: "13 Nov 2026, 10:39:04 WIB",
       timeWib: "10:39:04 WIB",
       durationSeconds: 112.0,
       thresholdSeconds: 60,
       plateNumber: "F 1802 BC",
       isPlateManual: true,
       status: "Pending",
-      trayekCode: "10",
-      trayekName: "Trayek 10: Bantar Kemang – Merdeka PP",
-      trayekSub: "Bodi Hijau Garis Merah • Organda Kota Bogor",
       reason: "Ngetem Menghambat Lalu Lintas",
       notes: "Berhenti di tikungan zebra cross.",
       verifier: "Budi Santoso (Petugas 04)",
@@ -130,21 +118,17 @@ export default function VerificationPage() {
     },
     {
       id: "ev-086",
-      incidentCode: "#N-20261006-086",
-      trackId: "Track #135",
+      trackId: "TRK-0135",
       cameraCode: "empang",
-      cameraName: "Simpang BTM (CAM-01)",
-      cameraLabel: "Simpang BTM (CAM-01)",
-      detectedAt: "06 Okt 2026, 10:35:50 WIB",
+      cameraName: "Jl. Djuanda - Empang",
+      cameraLabel: "Jl. Djuanda - Empang",
+      detectedAt: "13 Nov 2026, 10:35:50 WIB",
       timeWib: "10:35:50 WIB",
       durationSeconds: 71.0,
       thresholdSeconds: 60,
       plateNumber: "F 1878 BB",
       isPlateManual: false,
       status: "Pending",
-      trayekCode: "03",
-      trayekName: "Trayek 03: Baranangsiang – Bubulak PP",
-      trayekSub: "Bodi Hijau Pintu Kuning • Organda Kota Bogor",
       reason: "Menurunkan / Menaikkan Penumpang di Luar Halte",
       notes: "Menunggu di mulut persimpangan.",
       verifier: "Budi Santoso (Petugas 04)",
@@ -154,21 +138,17 @@ export default function VerificationPage() {
     },
     {
       id: "ev-085",
-      incidentCode: "#N-20261006-085",
-      trackId: "Track #130",
+      trackId: "TRK-0130",
       cameraCode: "empang",
-      cameraName: "Simpang BTM (CAM-01)",
-      cameraLabel: "Simpang BTM (CAM-01)",
-      detectedAt: "06 Okt 2026, 10:32:00 WIB",
+      cameraName: "Jl. Djuanda - Empang",
+      cameraLabel: "Jl. Djuanda - Empang",
+      detectedAt: "13 Nov 2026, 10:32:00 WIB",
       timeWib: "10:32 WIB",
       durationSeconds: 95.0,
       thresholdSeconds: 60,
       plateNumber: "F 1940 AP",
       isPlateManual: true,
       status: "Valid",
-      trayekCode: "02",
-      trayekName: "Trayek 02: Sukasari – Bubulak PP",
-      trayekSub: "Bodi Hijau Pintu Kuning • Organda Kota Bogor",
       reason: "Ngetem Menghambat Lalu Lintas",
       notes: "Diverifikasi oleh Petugas 04 • Berita acara tersimpan",
       verifier: "Petugas 04",
@@ -178,21 +158,17 @@ export default function VerificationPage() {
     },
     {
       id: "ev-084",
-      incidentCode: "#N-20261006-084",
-      trackId: "Track #128",
+      trackId: "TRK-0128",
       cameraCode: "surken",
-      cameraName: "Jembatan Merah (CAM-02)",
-      cameraLabel: "Jembatan Merah (CAM-02)",
-      detectedAt: "06 Okt 2026, 10:28:00 WIB",
+      cameraName: "Jl. Djuanda - Suryakencana",
+      cameraLabel: "Jl. Djuanda - Suryakencana",
+      detectedAt: "13 Nov 2026, 10:28:00 WIB",
       timeWib: "10:28 WIB",
       durationSeconds: 64.0,
       thresholdSeconds: 60,
       plateNumber: "F 1772 CD",
       isPlateManual: true,
       status: "Invalid",
-      trayekCode: "03",
-      trayekName: "Trayek 03: Baranangsiang – Bubulak PP",
-      trayekSub: "Bodi Hijau • Organda Kota Bogor",
       reason: "Terjebak Antrean / Kemacetan Simpang (Bukan Pelanggaran)",
       notes: "Alasan: Macet Total (Bukan Ngetem Disengaja)",
       verifier: "Petugas 04",
@@ -247,11 +223,10 @@ export default function VerificationPage() {
               const dt = ev.detected_at ? new Date(ev.detected_at) : new Date();
               return {
                 id: ev.id,
-                incidentCode: `#N-${ev.id.slice(0, 8).toUpperCase()}`,
-                trackId: ev.vehicle_track_id || `Track #${130 + idx}`,
+                trackId: ev.vehicle_track_id || `TRK-${String(130 + idx).padStart(4, "0")}`,
                 cameraCode: ev.camera_code || "empang",
-                cameraName: ev.camera_name || "Simpang BTM (CAM-01)",
-                cameraLabel: ev.camera_name || "Simpang BTM (CAM-01)",
+                cameraName: ev.camera_name || "Jl. Djuanda - Empang",
+                cameraLabel: ev.camera_name || "Jl. Djuanda - Empang",
                 detectedAt: dt.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }) + `, ` + dt.toLocaleTimeString("id-ID", { hour12: false }) + ` WIB`,
                 timeWib: dt.toLocaleTimeString("id-ID", { hour12: false }) + ` WIB`,
                 durationSeconds: ev.duration_seconds || 75,
@@ -259,9 +234,6 @@ export default function VerificationPage() {
                 plateNumber: ev.plate_number || (idx === 0 ? "F 1934 AK" : idx === 1 ? "F 1802 BC" : "Belum Diinput"),
                 isPlateManual: Boolean(ev.plate_number),
                 status: (ev.validation_status as "Pending" | "Valid" | "Invalid") || "Pending",
-                trayekCode: idx % 2 === 0 ? "02" : "10",
-                trayekName: idx % 2 === 0 ? "Trayek 02: Sukasari – Bubulak PP" : "Trayek 10: Bantar Kemang – Merdeka PP",
-                trayekSub: idx % 2 === 0 ? "Bodi Hijau Pintu Kuning • Organda Kota Bogor" : "Bodi Hijau Garis Merah • Organda Kota Bogor",
                 reason: ev.reason || "Ngetem Menghambat Lalu Lintas",
                 notes: ev.notes || "Pengemudi berhenti di bahu jalan persimpangan melebihi toleransi waktu.",
                 verifier: "Budi Santoso, S.T.",
@@ -312,11 +284,10 @@ export default function VerificationPage() {
 
             const newItem: VerificationItem = {
               id: data.event_id,
-              incidentCode: `#N-${data.event_id.slice(0, 8).toUpperCase()}`,
-              trackId: data.vehicle_track_id,
+              trackId: data.vehicle_track_id || "TRK-0001",
               cameraCode: data.camera_code || "empang",
-              cameraName: data.camera_name || "Simpang BTM (CAM-01)",
-              cameraLabel: data.camera_name || "Simpang BTM (CAM-01)",
+              cameraName: data.camera_name || "Jl. Djuanda - Empang",
+              cameraLabel: data.camera_name || "Jl. Djuanda - Empang",
               detectedAt:
                 new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }) +
                 `, ` +
@@ -328,9 +299,6 @@ export default function VerificationPage() {
               plateNumber: "Belum Diinput",
               isPlateManual: false,
               status: "Pending",
-              trayekCode: "02",
-              trayekName: "Trayek 02: Sukasari – Bubulak PP",
-              trayekSub: "Bodi Hijau Pintu Kuning • Organda Kota Bogor",
               reason: "Ngetem Menghambat Lalu Lintas",
               notes: "Auto-Capture sistem: Kendaraan terdeteksi berhenti di zona larangan.",
               verifier: "Budi Santoso, S.T.",
@@ -396,7 +364,7 @@ export default function VerificationPage() {
       ...prev,
       pendingToday: Math.max(0, prev.pendingToday - 1),
     }));
-    toast.success(`Kejadian ${selectedItem.incidentCode} terkonfirmasi VALID.`);
+    toast.success(`Kejadian ${selectedItem.trackId} terkonfirmasi VALID.`);
   };
 
   // Action: Edit & Valid
@@ -442,7 +410,7 @@ export default function VerificationPage() {
       ...prev,
       pendingToday: Math.max(0, prev.pendingToday - 1),
     }));
-    toast.warning(`Kejadian ${selectedItem.incidentCode} ditolak (INVALID / Bukan Ngetem).`);
+    toast.warning(`Kejadian ${selectedItem.trackId} ditolak (INVALID / Bukan Ngetem).`);
   };
 
   return (
@@ -466,18 +434,10 @@ export default function VerificationPage() {
                 <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">
                   Verifikasi Pelanggaran
                 </h1>
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-                  Dishub Bogor
-                </span>
               </div>
               <p className="text-xs text-slate-500 mt-1">
                 Pemeriksaan bukti insiden ngetem angkutan umum dan validasi nomor polisi secara manual oleh petugas (HITL).
               </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-slate-600 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-2xs">
-                Mode: Human-in-the-Loop (HITL)
-              </span>
             </div>
           </div>
 
@@ -572,10 +532,7 @@ export default function VerificationPage() {
                       >
                         <div className="flex items-center justify-between mb-1.5">
                           <div className="flex items-center gap-1.5">
-                            <span className="font-semibold text-xs text-slate-900">
-                              {it.incidentCode}
-                            </span>
-                            <span className="text-[10px] font-mono text-slate-600 bg-slate-100 px-1.5 py-0.2 rounded font-medium">
+                            <span className="font-mono font-bold text-xs text-slate-900 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
                               {it.trackId}
                             </span>
                           </div>
@@ -672,14 +629,11 @@ export default function VerificationPage() {
               <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-5">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h2 className="text-lg font-black text-slate-900 tracking-tight">
-                      {selectedItem.incidentCode}
+                    <h2 className="text-lg font-black text-slate-900 tracking-tight font-mono">
+                      {selectedItem.trackId}
                     </h2>
                     <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 font-extrabold text-[10px] border border-blue-200 uppercase">
                       {selectedItem.status === "Pending" ? "DALAM TINJAUAN" : selectedItem.status}
-                    </span>
-                    <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-mono text-[10px] font-bold">
-                      {selectedItem.trackId}
                     </span>
                   </div>
                 </div>
@@ -872,54 +826,31 @@ export default function VerificationPage() {
                     </div>
                   </div>
 
-                  {/* Baris 2: Trayek Referensi & Alasan Kejadian */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Kartu Trayek Referensi */}
-                    <div>
-                      <label className="text-xs font-semibold text-slate-500 block mb-1">
-                        Trayek (Referensi Jalur)
-                      </label>
-                      <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center gap-3">
-                        <span className="w-8 h-8 rounded-lg bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
-                          {selectedItem.trayekCode}
-                        </span>
-                        <div>
-                          <p className="text-xs font-semibold text-slate-900 leading-tight">
-                            {selectedItem.trayekName}
-                          </p>
-                          <p className="text-[10px] text-slate-400 mt-0.5">
-                            {selectedItem.trayekSub}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Alasan Kejadian Dropdown */}
-                    <div>
-                      <label className="text-xs font-semibold text-slate-500 block mb-1">
-                        Alasan Kejadian
-                      </label>
-                      <div className="relative">
-                        <select
-                          value={reasonForm}
-                          onChange={(e) => setReasonForm(e.target.value)}
-                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-medium text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-blue-500 bg-white appearance-none cursor-pointer pr-8"
-                        >
-                          <option value="Ngetem Menghambat Lalu Lintas">
-                            Ngetem Menghambat Lalu Lintas
-                          </option>
-                          <option value="Menurunkan / Menaikkan Penumpang di Luar Halte">
-                            Menurunkan / Menaikkan Penumpang di Luar Halte
-                          </option>
-                          <option value="Terjebak Antrean / Kemacetan Simpang (Bukan Pelanggaran)">
-                            Terjebak Antrean / Kemacetan Simpang (Bukan Pelanggaran)
-                          </option>
-                          <option value="Mogok / Kendala Teknis Kendaraan">
-                            Mogok / Kendala Teknis Kendaraan
-                          </option>
-                        </select>
-                        <ChevronDown className="w-4 h-4 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                      </div>
+                  {/* Baris 2: Alasan Kejadian */}
+                  <div>
+                    <label className="text-xs font-semibold text-slate-500 block mb-1">
+                      Alasan Kejadian
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={reasonForm}
+                        onChange={(e) => setReasonForm(e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-medium text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-blue-500 bg-white appearance-none cursor-pointer pr-8"
+                      >
+                        <option value="Ngetem Menghambat Lalu Lintas">
+                          Ngetem Menghambat Lalu Lintas
+                        </option>
+                        <option value="Menurunkan / Menaikkan Penumpang di Luar Halte">
+                          Menurunkan / Menaikkan Penumpang di Luar Halte
+                        </option>
+                        <option value="Terjebak Antrean / Kemacetan Simpang (Bukan Pelanggaran)">
+                          Terjebak Antrean / Kemacetan Simpang (Bukan Pelanggaran)
+                        </option>
+                        <option value="Mogok / Kendala Teknis Kendaraan">
+                          Mogok / Kendala Teknis Kendaraan
+                        </option>
+                      </select>
+                      <ChevronDown className="w-4 h-4 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                     </div>
                   </div>
 

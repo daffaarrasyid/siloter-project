@@ -88,13 +88,21 @@ def update_camera_configuration(camera_code: str, payload: CameraConfigUpdate):
             detail=f"Camera code '{camera_code}' not found. Supported: {valid_codes}",
         )
 
+    # Tentukan flag is_configured secara presisi:
+    # Jika roi_polygon kosong atau < 3 titik, is_configured wajib False
+    effective_is_configured = (
+        payload.is_configured
+        if payload.is_configured is not None
+        else (bool(payload.roi_polygon) and len(payload.roi_polygon) >= 3)
+    )
+
     # 1. Update live worker in memory on-the-fly
     stream_manager.update_camera_config(
         camera_code=code,
-        roi_polygon=payload.roi_polygon,
+        roi_polygon=payload.roi_polygon if payload.roi_polygon is not None else [],
         threshold_seconds=payload.threshold_seconds,
         stream_url=payload.stream_url,
-        is_configured=payload.is_configured if payload.is_configured is not None else True,
+        is_configured=effective_is_configured,
     )
 
     worker = stream_manager.get_worker(code)
@@ -108,17 +116,15 @@ def update_camera_configuration(camera_code: str, payload: CameraConfigUpdate):
     supabase = get_supabase_client()
     if supabase:
         try:
-            update_data: Dict[str, Any] = {}
+            update_data: Dict[str, Any] = {
+                "is_configured": effective_is_configured
+            }
             if payload.roi_polygon is not None:
                 update_data["roi_polygon"] = payload.roi_polygon
             if payload.threshold_seconds is not None:
                 update_data["threshold_seconds"] = payload.threshold_seconds
             if payload.stream_url is not None:
                 update_data["stream_url"] = payload.stream_url
-            if payload.is_configured is not None:
-                update_data["is_configured"] = payload.is_configured
-            else:
-                update_data["is_configured"] = True
 
             res = supabase.table("camera_configs").update(update_data).eq("camera_code", code).execute()
             if res.data and len(res.data) > 0 and isinstance(res.data[0], dict):
@@ -143,6 +149,39 @@ def update_camera_configuration(camera_code: str, payload: CameraConfigUpdate):
         is_configured=worker.is_configured,
         status=worker.status,
     )
+
+
+@router.post("/cameras/reset-all-rois")
+def reset_all_camera_rois():
+    """
+    Emergency and testing utility: Resets all CCTV camera ROI polygons to []
+    and is_configured to False, both in worker memory and in Supabase.
+    Removes all yellow polygon overlays from live stream feeds instantly.
+    """
+    valid_codes = [c.value for c in CameraCode]
+    supabase = get_supabase_client()
+
+    for code in valid_codes:
+        stream_manager.update_camera_config(
+            camera_code=code,
+            roi_polygon=[],
+            is_configured=False,
+        )
+
+    if supabase:
+        try:
+            supabase.table("camera_configs").update({
+                "roi_polygon": [],
+                "is_configured": False
+            }).neq("camera_code", "dummy_non_existent").execute()
+            logger.info("Successfully reset all camera_configs ROI in Supabase to empty.")
+        except Exception as e:
+            logger.warning(f"Could not reset camera_configs in Supabase: {e}")
+
+    return {
+        "status": "success",
+        "message": "All camera ROI polygons have been successfully reset to empty ([]) and deactivated."
+    }
 
 
 @router.get("/model/status", tags=["Model Registry"])

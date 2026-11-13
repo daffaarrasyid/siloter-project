@@ -19,15 +19,11 @@ router = APIRouter(prefix="/api/analytics", tags=["Analytics"])
 REKAP_PELANGGARAN_VALID: List[Dict[str, Any]] = [
     {
         "no": 1,
-        "incident_id": "#VIO-202610-0982",
+        "track_id": "TRK-0142",
         "plate_number": "F 1934 AK",
         "plate_color": "Hitam / Plat Kuning Umum",
-        "trayek_code": "02",
-        "trayek_name": "Trayek 02",
-        "trayek_desc": "Hijau-Kuning",
-        "trayek_color": "#eab308",
         "camera_code": "empang",
-        "camera_name": "Simpang BTM (CAM-01)",
+        "camera_name": "Jl. Djuanda - Empang",
         "waktu_wib": "24 Okt 2026 - 17:14:02",
         "duration_seconds": 214,
         "duration_display": "214s (3m 34s)",
@@ -39,15 +35,11 @@ REKAP_PELANGGARAN_VALID: List[Dict[str, Any]] = [
     },
     {
         "no": 2,
-        "incident_id": "#VIO-202610-0981",
+        "track_id": "TRK-0139",
         "plate_number": "F 1422 BA",
         "plate_color": "Hitam / Plat Kuning Umum",
-        "trayek_code": "03",
-        "trayek_name": "Trayek 03",
-        "trayek_desc": "Biru",
-        "trayek_color": "#3b82f6",
         "camera_code": "surken",
-        "camera_name": "Jembatan Merah (CAM-02)",
+        "camera_name": "Jl. Djuanda - Suryakencana",
         "waktu_wib": "24 Okt 2026 - 16:58:19",
         "duration_seconds": 188,
         "duration_display": "188s (3m 08s)",
@@ -55,19 +47,15 @@ REKAP_PELANGGARAN_VALID: List[Dict[str, Any]] = [
         "verified_at": "24 Okt 2026 - 17:10",
         "status": "VALID",
         "reason": "Menunggu Penumpang di Zona Larangan",
-        "notes": "Penurunan dan penjemputan penumpang di area terlarang Jembatan Merah.",
+        "notes": "Penurunan dan penjemputan penumpang di area terlarang Suryakencana.",
     },
     {
         "no": 3,
-        "incident_id": "#VIO-202610-0980",
+        "track_id": "TRK-0135",
         "plate_number": "F 1803 AA",
         "plate_color": "Hitam / Plat Kuning Umum",
-        "trayek_code": "02",
-        "trayek_name": "Trayek 02",
-        "trayek_desc": "Hijau-Kuning",
-        "trayek_color": "#eab308",
         "camera_code": "empang",
-        "camera_name": "Simpang BTM (CAM-01)",
+        "camera_name": "Jl. Djuanda - Empang",
         "waktu_wib": "24 Okt 2026 - 16:42:56",
         "duration_seconds": 245,
         "duration_display": "245s (4m 05s)",
@@ -79,15 +67,11 @@ REKAP_PELANGGARAN_VALID: List[Dict[str, Any]] = [
     },
     {
         "no": 4,
-        "incident_id": "#VIO-202610-0979",
+        "track_id": "TRK-0130",
         "plate_number": "F 1198 ZB",
         "plate_color": "Hitam / Plat Kuning Umum",
-        "trayek_code": "03",
-        "trayek_name": "Trayek 03",
-        "trayek_desc": "Biru",
-        "trayek_color": "#3b82f6",
         "camera_code": "surken",
-        "camera_name": "Jembatan Merah (CAM-02)",
+        "camera_name": "Jl. Djuanda - Suryakencana",
         "waktu_wib": "24 Okt 2026 - 15:30:11",
         "duration_seconds": 130,
         "duration_display": "130s (2m 10s)",
@@ -99,15 +83,11 @@ REKAP_PELANGGARAN_VALID: List[Dict[str, Any]] = [
     },
     {
         "no": 5,
-        "incident_id": "#VIO-202610-0978",
+        "track_id": "TRK-0125",
         "plate_number": "F 1650 DD",
         "plate_color": "Hitam / Plat Kuning Umum",
-        "trayek_code": "10",
-        "trayek_name": "Trayek 10",
-        "trayek_desc": "Merah Bata",
-        "trayek_color": "#ef4444",
         "camera_code": "surken",
-        "camera_name": "Jembatan Merah (CAM-02)",
+        "camera_name": "Jl. Djuanda - Suryakencana",
         "waktu_wib": "24 Okt 2026 - 14:18:49",
         "duration_seconds": 195,
         "duration_display": "195s (3m 15s)",
@@ -119,15 +99,11 @@ REKAP_PELANGGARAN_VALID: List[Dict[str, Any]] = [
     },
     {
         "no": 6,
-        "incident_id": "#VIO-202610-0977",
+        "track_id": "TRK-0120",
         "plate_number": "F 1940 AP",
         "plate_color": "Hitam / Plat Kuning Umum",
-        "trayek_code": "02",
-        "trayek_name": "Trayek 02",
-        "trayek_desc": "Hijau-Kuning",
-        "trayek_color": "#eab308",
         "camera_code": "empang",
-        "camera_name": "Simpang BTM (CAM-01)",
+        "camera_name": "Jl. Djuanda - Empang",
         "waktu_wib": "24 Okt 2026 - 13:05:12",
         "duration_seconds": 142,
         "duration_display": "142s (2m 22s)",
@@ -139,15 +115,11 @@ REKAP_PELANGGARAN_VALID: List[Dict[str, Any]] = [
     },
     {
         "no": 7,
-        "incident_id": "#VIO-202610-0976",
+        "track_id": "TRK-0115",
         "plate_number": "F 1892 BB",
         "plate_color": "Hitam / Plat Kuning Umum",
-        "trayek_code": "03",
-        "trayek_name": "Trayek 03",
-        "trayek_desc": "Biru",
-        "trayek_color": "#3b82f6",
         "camera_code": "empang",
-        "camera_name": "Simpang BTM (CAM-01)",
+        "camera_name": "Jl. Djuanda - Empang",
         "waktu_wib": "24 Okt 2026 - 11:22:40",
         "duration_seconds": 160,
         "duration_display": "160s (2m 40s)",
@@ -291,18 +263,14 @@ def get_analytics_summary() -> Dict[str, Any]:
             dur = int(ev.get("duration_seconds") or 60)
             dur_m = dur // 60
             dur_s = dur % 60
-            ev_id = str(ev.get("id", "0000"))[:8].upper()
+            tid = ev.get("vehicle_track_id") or f"TRK-{str(ev.get('id', '0000'))[:4].upper()}"
             dynamic_rekap.append({
                 "no": len(dynamic_rekap) + 1,
-                "incident_id": f"#VIO-{ev_id}",
+                "track_id": tid,
                 "plate_number": ev.get("plate_number") or "F 1934 AK",
                 "plate_color": "Hitam / Plat Kuning Umum",
-                "trayek_code": "02",
-                "trayek_name": "Trayek 02",
-                "trayek_desc": "Hijau-Kuning",
-                "trayek_color": "#eab308",
                 "camera_code": ev.get("camera_code", "empang"),
-                "camera_name": ev.get("camera_name", "Simpang BTM (CAM-01)"),
+                "camera_name": ev.get("camera_name", "Jl. Djuanda - Empang"),
                 "waktu_wib": str(ev.get("detected_at", ""))[:19].replace("T", " ") if ev.get("detected_at") else "Hari ini",
                 "duration_seconds": dur,
                 "duration_display": f"{dur}s ({dur_m}m {dur_s:02d}s)",
@@ -366,18 +334,14 @@ def get_rekap_pelanggaran(
             dur = int(ev.get("duration_seconds") or 60)
             dur_m = dur // 60
             dur_s = dur % 60
-            ev_id = str(ev.get("id", "0000"))[:8].upper()
+            tid = ev.get("vehicle_track_id") or f"TRK-{str(ev.get('id', '0000'))[:4].upper()}"
             dynamic_rekap.append({
                 "no": len(dynamic_rekap) + 1,
-                "incident_id": f"#VIO-{ev_id}",
+                "track_id": tid,
                 "plate_number": ev.get("plate_number") or "F 1934 AK",
                 "plate_color": "Hitam / Plat Kuning Umum",
-                "trayek_code": "02",
-                "trayek_name": "Trayek 02",
-                "trayek_desc": "Hijau-Kuning",
-                "trayek_color": "#eab308",
                 "camera_code": ev.get("camera_code", "empang"),
-                "camera_name": ev.get("camera_name", "Simpang BTM (CAM-01)"),
+                "camera_name": ev.get("camera_name", "Jl. Djuanda - Empang"),
                 "waktu_wib": str(ev.get("detected_at", ""))[:19].replace("T", " ") if ev.get("detected_at") else "Hari ini",
                 "duration_seconds": dur,
                 "duration_display": f"{dur}s ({dur_m}m {dur_s:02d}s)",
@@ -396,7 +360,7 @@ def get_rekap_pelanggaran(
 
     for row in source_rekap:
         if t_clean and t_clean != "Semua Trayek Aktif (Koridor 01-10)":
-            if t_clean.lower() not in row["trayek_name"].lower() and t_clean.lower() not in row["trayek_desc"].lower():
+            if "trayek_name" in row and t_clean.lower() not in row["trayek_name"].lower():
                 continue
 
         if c_clean and c_clean != "Semua CCTV (CAM-01 & CAM-02)":
@@ -405,7 +369,7 @@ def get_rekap_pelanggaran(
 
         if s_clean:
             match_plat = s_clean in row["plate_number"].lower()
-            match_id = s_clean in row["incident_id"].lower()
+            match_id = s_clean in (row.get("track_id") or row.get("incident_id") or "").lower()
             if not (match_plat or match_id):
                 continue
 
